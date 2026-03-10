@@ -550,12 +550,19 @@ async function validateTicketFirestore(ticketId) {
     if (snap.exists) {
       // Lippu löytyi — jo käytetty
       const data = snap.data();
-      return { alreadyUsed: true, usedTime: data.time || null };
+      // Firestore Timestamp → JS Date → ISO string
+      let usedTime = null;
+      if (data.time && data.time.toDate) {
+        usedTime = data.time.toDate().toISOString();
+      } else if (typeof data.time === 'string') {
+        usedTime = data.time;
+      }
+      return { alreadyUsed: true, usedTime };
     } else {
       // Ei ole vielä — merkitään käytetyksi
       await ref.set({
         used:  true,
-        time:  new Date().toISOString(),
+        time:  firebase.firestore.FieldValue.serverTimestamp(),
         train: '', // täytetään handleScan:ssa
       });
       return { alreadyUsed: false, usedTime: null };
@@ -766,7 +773,7 @@ function startScan() {
           if (result) {
             const now = Date.now();
             // Estä sama koodi 2.5s sisällä
-            if (result.text === S.lastCode && now - S.lastTime < 2500) return;
+            if (result.text === S.lastCode && now - S.lastTime < 2000) return; // 2s cooldown
             S.lastCode  = result.text;
             S.lastTime  = now;
 
@@ -863,10 +870,19 @@ async function handleScan(raw) {
     fsError     = result.firestoreError || null;
 
     // Jos OK, kirjoita myös junan numero Firestoreen
+    // train kirjoitetaan jo set():ssä validateTicketFirestore:n sisällä
+    // päivitetään nyt oikealla arvolla (set käytti tyhjää stringiä)
     if (!alreadyUsed && db) {
       try {
-        await db.collection('tickets').doc(ticket.ticket_id).update({ train: ticket.train });
-      } catch(e) {}
+        await db.collection('tickets').doc(ticket.ticket_id).update({
+          train: ticket.train,
+          coach: ticket.coach,
+          seat:  ticket.seat,
+          from:  ticket.from,
+          to:    ticket.to,
+          type:  ticket.ticket_type,
+        });
+      } catch(e) { console.warn('Firestore update:', e.message); }
     }
   } else {
     // Legacy-liput: tarkistetaan localStoragesta
