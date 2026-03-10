@@ -500,7 +500,8 @@ html,body{height:100%;overflow:hidden;background:#e8e8e0;font-family:Arial,Helve
 <div id="toasts"></div>
 
 <!-- Ulkoiset kirjastot — ladataan vain verkosta -->
-<script src="https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js"></script>
+<!-- ZXing browser-kirjasto: tukee QR + Aztec + DataMatrix -->
+<script src="https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/qrcode@1.5.3/build/qrcode.min.js"></script>
@@ -625,8 +626,22 @@ function toast(msg, type = 'ok', ms = 3000) {
 }
 
 // ── ÄÄNI ──
+// ── ÄÄNI ──
+// Yritetään ensin /sounds/beep.mp3 (tai /sounds/huom.mp3)
+// Jos tiedostoa ei ole, fallback AudioContext-synteesiin
 function beep(type) {
   if (S.g('sound') === 'false') return;
+
+  // MP3-tiedosto
+  const file = type === 'ok' ? '/sounds/beep.mp3' : '/sounds/huom.mp3';
+  const audio = new Audio(file);
+  audio.play().catch(() => {
+    // MP3 ei löydy tai selain esti — käytetään synteesiä
+    beepSynth(type);
+  });
+}
+
+function beepSynth(type) {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
     const o = ctx.createOscillator(), g = ctx.createGain();
@@ -642,81 +657,186 @@ function beep(type) {
       g.gain.exponentialRampToValueAtTime(.001, ctx.currentTime + .5);
       o.start(); o.stop(ctx.currentTime + .5);
       const o2 = ctx.createOscillator(); o2.connect(g);
-      o2.frequency.value = 300; o2.start(ctx.currentTime + .2); o2.stop(ctx.currentTime + .5);
+      o2.frequency.value = 300;
+      o2.start(ctx.currentTime + .2);
+      o2.stop(ctx.currentTime + .5);
     }
   } catch(e) {}
 }
 function vibe(p) { if (S.g('vibrate') !== 'false' && 'vibrate' in navigator) navigator.vibrate(p); }
 
 // ── SKANNERI ──
+// ══════════════════════════════════════════════════════════
+//  SKANNERI — ZXing @0.21.3, tukee QR + Aztec + DataMatrix
+// ══════════════════════════════════════════════════════════
+
 function startScan() {
   if (S.scanning) return;
   const video  = document.getElementById('scan-video');
   const status = document.getElementById('scan-status');
   status.textContent = 'Käynnistetään kameraa...';
+
   try {
+    // Hints: QR + Aztec + DataMatrix
     const hints = new Map();
     hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
       ZXing.BarcodeFormat.QR_CODE,
       ZXing.BarcodeFormat.AZTEC,
       ZXing.BarcodeFormat.DATA_MATRIX,
     ]);
-    S.reader = new ZXing.BrowserMultiFormatReader(hints);
+    // TRY_HARDER parantaa Aztec-tunnistusta merkittävästi
+    hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
+
+    S.reader = new ZXing.BrowserMultiFormatReader(hints, {
+      delayBetweenScanAttempts: 150,   // ms — tiheämpi näytteenotto
+      delayBetweenScanSuccess: 2000,   // ms — ei moninkertaista lukua
+    });
+
     S.reader.listVideoInputDevices().then(devs => {
       if (!devs.length) { status.textContent = 'KAMERAA EI LÖYDY'; return; }
-      const back = devs.find(d => /back|environment/i.test(d.label));
+
+      // Suositaan takakameraa (environment)
+      const back = devs.find(d => /back|environment|rear/i.test(d.label));
       const dev  = back || devs[devs.length - 1];
-      S.reader.decodeFromVideoDevice(dev.deviceId, 'scan-video', (res) => {
-        if (res) {
-          const now = Date.now();
-          if (res.text === S.lastCode && now - S.lastTime < 3000) return;
-          S.lastCode = res.text; S.lastTime = now;
-          handleScan(res.text);
+
+      S.reader.decodeFromVideoDevice(
+        dev.deviceId,
+        'scan-video',
+        (result, err) => {
+          if (result) {
+            const now = Date.now();
+            // Estä sama koodi 2.5s sisällä
+            if (result.text === S.lastCode && now - S.lastTime < 2500) return;
+            S.lastCode  = result.text;
+            S.lastTime  = now;
+
+            // Näytä koodin tyyppi status-rivissä hetkeksi
+            const fmt = result.getBarcodeFormat
+              ? ZXing.BarcodeFormat[result.getBarcodeFormat()] || 'KOODI'
+              : 'KOODI';
+            status.textContent = fmt + ' luettu ✓';
+            setTimeout(() => {
+              if (S.scanning) status.textContent = 'AKTIIVINEN – odottaa koodia';
+            }, 2000);
+
+            handleScan(result.text);
+          }
+          // err on normaali kun yhtään koodia ei löydy kehyksestä — ei logata
         }
-      });
+      );
+
       S.scanning = true;
       status.textContent = 'AKTIIVINEN – odottaa koodia';
-    }).catch(() => { status.textContent = 'KAMERALUPA PUUTTUU'; });
-  } catch(e) { status.textContent = 'SKANNERI EI KÄYNNISTYNYT'; }
+
+    }).catch(e => {
+      status.textContent = 'KAMERALUPA PUUTTUU';
+      console.warn('ZXing listVideoInputDevices:', e);
+    });
+
+  } catch(e) {
+    status.textContent = 'SKANNERI EI KÄYNNISTYNYT';
+    console.error('ZXing init error:', e);
+  }
 }
 
 function stopScan() {
-  if (S.reader) { try { S.reader.reset(); } catch(e) {} S.reader = null; }
+  if (S.reader) {
+    try { S.reader.reset(); } catch(e) {}
+    S.reader = null;
+  }
   S.scanning = false;
 }
 
+// ── SKANNIN KÄSITTELY ──
 function handleScan(raw) {
   let t;
+
+  // Yritetään parsia JSON
   try { t = JSON.parse(raw); } catch(e) {
-    // Ei JSON - näytetään raakasisältö debuggausta varten
-    toast('Koodi luettu (ei VR-lippu): ' + raw.substring(0,40), 'warn', 5000);
-    return;
-  }
-  if (!t.type || t.type !== 'vr-ticket') {
-    toast('Tuntematon koodin tyyppi: ' + (t.type||'?'), 'warn', 5000);
+    // Ei JSON — näytetään raakoteksti (debug-apuri)
+    toast('Koodi luettu (ei VR-lippu): ' + raw.substring(0, 50), 'warn', 5000);
+    vibe([100]);
     return;
   }
 
+  // Tarkistetaan lipputyyppi
+  if (!t.type || t.type !== 'vr-ticket') {
+    toast('Tuntematon koodin tyyppi: ' + (t.type || '?'), 'warn', 5000);
+    vibe([100]);
+    return;
+  }
+
+  // Onko lippu jo käytetty?
   const ex = S.tickets.find(x => x.ticket_id === t.ticket_id);
   if (ex && ex.used) {
-    beep('huom'); vibe([300,100,300,100,300]);
+    beep('huom');
+    vibe([300, 100, 300, 100, 300]);
     showPopup(ex, 'HUOM', false, true);
-    toast('LIPPU JO KÄYTETTY', 'err'); return;
+    sendNotification('Lippu jo käytetty', t.train + ' · Vaunu ' + t.coach + ' · Paikka ' + t.seat);
+    toast('LIPPU JO KÄYTETTY', 'err');
+    return;
   }
 
+  // Tallennetaan lippu
   const rec = {
-    ticket_id: t.ticket_id, train: t.train, coach: t.coach, seat: t.seat,
-    ticket_type: t.ticket_type, from: t.from, to: t.to,
-    used: true, used_time: new Date().toISOString(), note: ex?.note || ''
+    ticket_id:   t.ticket_id,
+    train:       t.train,
+    coach:       t.coach,
+    seat:        t.seat,
+    ticket_type: t.ticket_type,
+    from:        t.from,
+    to:          t.to,
+    used:        true,
+    used_time:   new Date().toISOString(),
+    note:        ex?.note || '',
   };
   if (ex) Object.assign(ex, rec); else S.tickets.push(rec);
   localStorage.setItem('vr_tickets', JSON.stringify(S.tickets));
 
   const match = t.train === S.train;
+
+  // ── Ääni ──
   beep(match ? 'ok' : 'huom');
-  vibe(match ? [80] : [200,80,200]);
+
+  // ── Värinä ──
+  vibe(match ? [80] : [200, 80, 200]);
+
+  // ── Ilmoitus ──
+  sendNotification(
+    'Lippu tarkastettu',
+    t.train + ' · Vaunu ' + t.coach + ' · Paikka ' + t.seat
+  );
+
+  // ── Popup + Toast ──
   showPopup(rec, match ? 'OK' : 'HUOM', match, false);
-  toast((match ? 'OK' : 'HUOM') + ': ' + t.train + ' · ' + t.coach + '-' + t.seat, match ? 'ok' : 'warn');
+  toast(
+    (match ? 'OK' : 'HUOM') + ': ' + t.train + ' · ' + t.coach + '-' + t.seat,
+    match ? 'ok' : 'warn'
+  );
+}
+
+// ── ILMOITUKSET (Apple/Android push) ──
+function sendNotification(title, body) {
+  if (S.g('notifications') === 'false') return;
+  if (!('Notification' in window)) return;
+
+  const send = () => {
+    try {
+      new Notification(title, {
+        body,
+        icon: 'logo.png',
+        badge: 'logo.png',
+        tag: 'vr-ticket',          // korvaa edellisen ilmoituksen
+        renotify: false,
+      });
+    } catch(e) {}
+  };
+
+  if (Notification.permission === 'granted') {
+    send();
+  } else if (Notification.permission !== 'denied') {
+    Notification.requestPermission().then(p => { if (p === 'granted') send(); });
+  }
 }
 
 // ── POPUP ──
@@ -1015,6 +1135,7 @@ function renderSettings() {
     <div class="sset-sec"><div class="sset-sec-ttl">ILMOITUKSET</div><div class="sset-card">
       <div class="sset-row"><div><div class="sset-rt">Värinä</div></div><label class="tog"><input type="checkbox" id="st-vib"${vib?' checked':''}><div class="tog-track"></div></label></div>
       <div class="sset-row"><div><div class="sset-rt">Ääni</div></div><label class="tog"><input type="checkbox" id="st-snd"${snd?' checked':''}><div class="tog-track"></div></label></div>
+      <div class="sset-row"><div><div class="sset-rt">Push-ilmoitukset</div><div class="sset-rs">Ilmoitus skannauksesta</div></div><label class="tog"><input type="checkbox" id="st-ntf"${S.g('notifications')!=='false'?' checked':''}><div class="tog-track"></div></label></div>
     </div></div>
     <div class="sset-sec"><div class="sset-sec-ttl">POPUP</div><div class="sset-card">
       <div class="sset-row">
@@ -1040,6 +1161,13 @@ function renderSettings() {
 
   document.getElementById('st-vib').onchange = e => S.s('vibrate', e.target.checked);
   document.getElementById('st-snd').onchange = e => S.s('sound', e.target.checked);
+  document.getElementById('st-ntf').onchange = async e => {
+    S.s('notifications', e.target.checked);
+    if (e.target.checked && 'Notification' in window && Notification.permission !== 'granted') {
+      const p = await Notification.requestPermission();
+      if (p !== 'granted') { e.target.checked = false; S.s('notifications', 'false'); toast('Ilmoituslupa evätty', 'err'); }
+    }
+  };
   document.getElementById('st-dur').oninput  = e => {
     document.getElementById('st-dur-v').textContent = e.target.value + 's';
     S.s('popup_duration', e.target.value);
@@ -1060,6 +1188,13 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:')
 // ── KÄYNNISTYS ──
 updateTop();
 updateQuick();
+
+// Pyydä ilmoituslupa heti kun käyttäjä on tehnyt jotain (2.5s viive)
+setTimeout(() => {
+  if ('Notification' in window && Notification.permission === 'default' && S.g('notifications') !== 'false') {
+    Notification.requestPermission();
+  }
+}, 2500);
 </script>
 </body>
 </html>
