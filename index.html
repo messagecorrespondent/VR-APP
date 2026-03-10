@@ -134,7 +134,7 @@ html,body{height:100%;overflow:hidden;background:#e8e8e0;font-family:Arial,Helve
 .gen-btn:active{background:#007a3c}
 .qr-box{background:#f5f5ee;border:2px solid #333;padding:16px;display:none;flex-direction:column;align-items:center;gap:10px}
 .qr-box.on{display:flex}
-#qr-canvas{border:2px solid #333}
+#qr-canvas{border:2px solid #333;image-rendering:pixelated}
 .qr-id{font-family:monospace;font-size:15px;font-weight:700}
 .qr-det{font-size:11px;color:#555;text-align:center;font-weight:700}
 
@@ -504,7 +504,7 @@ html,body{height:100%;overflow:hidden;background:#e8e8e0;font-family:Arial,Helve
 <script src="https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<script src="https://unpkg.com/qrcode@1.5.3/build/qrcode.min.js"></script>
+<!-- qrcode.js poistettu — Aztec generoidaan ZXing MultiFormatWriter:llä -->
 <!-- Firebase SDK (modular v10 compat-kerros — toimii suoraan scriptinä) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -517,12 +517,12 @@ html,body{height:100%;overflow:hidden;background:#e8e8e0;font-family:Arial,Helve
 //  asetuksista (Firebase Console → Project Settings → Your apps)
 // ══════════════════════════════════════════════════════════════
 const FIREBASE_CONFIG = {
-  apiKey:            "AIzaSyB-fZmOKY6MTRfVqiA6VgHZZ-xU2M-RbjM",
-  authDomain:        "vr-ticket-system.firebaseapp.com",
-  projectId:         "vr-ticket-system",
-  storageBucket:     "vr-ticket-system.firebasestorage.app",
-  messagingSenderId: "149001603308",
-  appId:             "1:149001603308:web:0d740dd27cd3149d563dc9",
+  apiKey:            "KORVAA_TÄHÄN",
+  authDomain:        "PROJEKTI.firebaseapp.com",
+  projectId:         "PROJEKTI",
+  storageBucket:     "PROJEKTI.appspot.com",
+  messagingSenderId: "123456789",
+  appId:             "1:123456789:web:abcdef",
 };
 
 let db = null; // Firestore-instanssi, alustetaan alla
@@ -814,6 +814,148 @@ function stopScan() {
   S.scanning = false;
 }
 
+// ══════════════════════════════════════════════════════════════
+//  VR-MATKUSTAJALIPUN LUKIJA (vain näyttö, ei validointia)
+//
+//  Oikeat VR-liput sisältävät Aztec-koodattua binääridataa.
+//  Emme yritä validoida tai kopioida niitä —
+//  ainoastaan luemme näkyvän tekstin (juna, vaunu, paikka, päivä).
+//
+//  VRAPP-lippuihin EI kosketa. Tämä ajaa vain jos JSON.parse epäonnistuu.
+// ══════════════════════════════════════════════════════════════
+
+/**
+ * detectVRTicket(raw)
+ * Palauttaa true jos raaka merkkijono vaikuttaa oikealta VR-lipulta.
+ * Kriteerit (riittää yksi osua):
+ *   – sisältää junakaavion:  IC/S/PYO/AE + numero
+ *   – sisältää päivämäärän:  d.M.YYYY tai dd.MM.YYYY
+ */
+function detectVRTicket(raw) {
+  if (!raw || raw.length < 8) return false;
+
+  // latin1-dekoodaus paljastaa mahdolliset tekstikentät
+  let decoded = raw;
+  try {
+    const bytes = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i) & 0xff;
+    decoded = new TextDecoder('latin1').decode(bytes);
+  } catch(e) {}
+
+  const trainPat = /(IC|S|PYO|AE|P|HDM|MUS)\s*\d{1,4}/i;
+  const datePat  = /\d{1,2}\.\d{1,2}\.\d{4}/;
+
+  return trainPat.test(decoded) || datePat.test(decoded);
+}
+
+/**
+ * parseVRTicket(raw)
+ * Yrittää poimia kentät oikeasta VR-lipusta.
+ * Palauttaa objektin { train, coach, seat, from, to, date, ticket_type }
+ * tai null jos mitään ei löydy.
+ *
+ * Kaikki kentät ovat "parhaita arvauksia" — ei validointia.
+ */
+function parseVRTicket(raw) {
+  // Muunnetaan latin1:ksi jotta skandinaaviset merkit ja binääri näkyy oikein
+  let text = raw;
+  try {
+    const bytes = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i) & 0xff;
+    text = new TextDecoder('latin1').decode(bytes);
+  } catch(e) {}
+
+  // ── Juna ──
+  // Prioriteettijärjestys: isolla kirjoitettu ensin, sitten case-insensitive
+  const trainMatch =
+    text.match(/(IC|S|PYO|AE|HDM|MUS|P)\s*(\d{1,4})/) ||
+    text.match(/(IC|S|PYO|AE|HDM|MUS|P)\s*(\d{1,4})/i);
+  const train = trainMatch
+    ? (trainMatch[1].toUpperCase() + trainMatch[2])
+    : null;
+
+  // ── Päivämäärä ──
+  const dateMatch = text.match(/(\d{1,2})\.(\d{1,2})\.(\d{4})/);
+  const date = dateMatch ? dateMatch[0] : null;
+
+  // ── Vaunu + Paikka ──
+  // VR-lipuissa vaunu ja paikka esiintyvät usein peräkkäin
+  // Etsitään kaksi erillistä numerokenttää
+  const numMatches = [...text.matchAll(/(\d{1,3})/g)]
+    .map(m => parseInt(m[1]))
+    .filter(n => n >= 1 && n <= 99);   // suodata selvästi väärät
+
+  // Vaunu: 1–15, Paikka: 1–99 — otetaan kaksi ensimmäistä järkevää
+  let coach = null, seat = null;
+  for (const n of numMatches) {
+    if (coach === null && n >= 1 && n <= 15)  { coach = n; continue; }
+    if (seat  === null && n >= 1 && n <= 99)  { seat  = n; break; }
+  }
+
+  // ── Lipputyyppi — etsitään tunnettuja suomalaisia termejä ──
+  const typeMap = [
+    [/LAPSI|lapsi/,         'LAPSI'],
+    [/OPISKELIJA|opiskel/i, 'OPISKELIJA'],
+    [/ELÄKELÄINEN|eläk/i,  'ELÄKELÄINEN'],
+    [/VARUSMIES|varusk/i,   'VARUSMIES'],
+    [/PERHE|perhe/i,        'PERHE'],
+    [/AIKUINEN|aikuinen/i,  'AIKUINEN'],
+  ];
+  let ticket_type = 'AIKUINEN'; // oletus
+  for (const [pat, label] of typeMap) {
+    if (pat.test(text)) { ticket_type = label; break; }
+  }
+
+  // ── Asemien nimet ──
+  // Etsitään tunnettuja asemien lyhenteitä tai nimiä
+  const stationPat = /(HKI|HELSINKI|OL|OULU|TRE|TAMPERE|TKU|TURKU|MI|MIKKELI|LH|LAHTI|JNS|JOENSUU|KOK|KOKKOLA|SK|SEINÄJOKI|JY|JYVÄSKYLÄ|KV|KOUVOLA|LR|LAPPEENRANTA)/gi;
+  const stations   = [...new Set([...text.matchAll(stationPat)].map(m => m[0].toUpperCase()))];
+  const from = stations[0] || null;
+  const to   = stations[1] || null;
+
+  // Ei tarpeeksi dataa → ei VR-lippu
+  if (!train && !date) return null;
+
+  return { train, coach, seat, from, to, date, ticket_type };
+}
+
+// ── NÄYTÄ VR-LIPPU POPUPISSA ──
+// Ei koske VRAPP-logiikkaan, ei kirjoita Firestoreen.
+function showVRPassengerTicket(parsed, raw) {
+  const ticket = {
+    ticket_id:   'VR-' + Date.now(),
+    train:       parsed.train  || '?',
+    from:        parsed.from   || '?',
+    to:          parsed.to     || '?',
+    coach:       parsed.coach  || '?',
+    seat:        parsed.seat   || '?',
+    ticket_type: parsed.ticket_type || 'AIKUINEN',
+    note:        'VR Lippu (ei validoitu)' + (parsed.date ? ' · ' + parsed.date : ''),
+    used_time:   null,
+  };
+
+  const match = ticket.train === S.train;
+
+  // Ääni + värinä (ei Firebase, ei localStorage-merkintää)
+  beep(match ? 'ok' : 'huom');
+  vibe(match ? [80] : [200, 80, 200]);
+  sendNotification(
+    'VR Lippu luettu (ei validoitu)',
+    ticket.train + ' · Vaunu ' + ticket.coach + ' · Paikka ' + ticket.seat
+  );
+
+  // Popup: match = true jos oikea juna, mutta merkitään aina "ei validoitu"
+  showPopup(ticket, match ? 'OK' : 'HUOM', match, false, null);
+
+  toast(
+    'VR Lippu: ' + ticket.train +
+    (ticket.coach !== '?' ? ' · ' + ticket.coach + '-' + ticket.seat : '') +
+    ' (ei validoitu)',
+    match ? 'ok' : 'warn',
+    6000
+  );
+}
+
 // ── SKANNIN KÄSITTELY ──
 // Tukee molempia formaatteja:
 //   VRAPP:    { "app":"VRAPP", "id":"TICKET-xxx", "train":"IC68", ... }
@@ -823,8 +965,19 @@ async function handleScan(raw) {
 
   // ── 1. Parsi JSON ──
   try { t = JSON.parse(raw); } catch(e) {
-    toast('Koodi luettu (ei VR-lippu): ' + raw.substring(0, 50), 'warn', 5000);
-    vibe([100]);
+    // JSON-parse epäonnistui — yritetään lukea oikeaa VR-matkustajalippua
+    if (detectVRTicket(raw)) {
+      const parsed = parseVRTicket(raw);
+      if (parsed) {
+        showVRPassengerTicket(parsed, raw);
+      } else {
+        toast('Koodi luettu (ei VR-lippu): ' + raw.substring(0, 50), 'warn', 5000);
+        vibe([100]);
+      }
+    } else {
+      toast('Koodi luettu (ei VR-lippu): ' + raw.substring(0, 50), 'warn', 5000);
+      vibe([100]);
+    }
     return;
   }
 
@@ -1104,7 +1257,30 @@ async function loadTimetable() {
 }
 
 // ── LIPUNMYYNTI ──
-document.getElementById('btn-gen').addEventListener('click', async () => {
+// ── AZTEC-ENKOODERI ──
+// Käytetään ZXing.MultiFormatWriter (sama kirjasto kuin skanneri)
+// joka enkoodaa BitMatrixin. BitMatrix piirretään manuaalisesti canvasille.
+function bitMatrixToCanvas(matrix, canvas, size) {
+  const w = matrix.getWidth();
+  const h = matrix.getHeight();
+  const scale = Math.floor(size / Math.max(w, h));
+  const pad   = Math.floor((size - scale * w) / 2);
+  canvas.width  = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, size, size);
+  ctx.fillStyle = '#000000';
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      if (matrix.get(x, y)) {
+        ctx.fillRect(pad + x * scale, pad + y * scale, scale, scale);
+      }
+    }
+  }
+}
+
+document.getElementById('btn-gen').addEventListener('click', () => {
   const train = document.getElementById('s-train').value.trim().toUpperCase() || S.train;
   const from  = document.getElementById('s-from').value.trim();
   const to    = document.getElementById('s-to').value.trim();
@@ -1112,18 +1288,42 @@ document.getElementById('btn-gen').addEventListener('click', async () => {
   const seat  = document.getElementById('s-seat').value;
   const type  = document.getElementById('s-type').value;
   if (!from || !to || !coach || !seat) { toast('Täytä kaikki kentät', 'err'); return; }
-  const id   = 'VR-' + Math.floor(100000 + Math.random() * 900000);
-  const data = { type:'vr-ticket', ticket_id:id, train, from, to, coach:+coach, seat:+seat, ticket_type:type };
-  const qrStr = JSON.stringify(data);
+
+  // Lippu VRAPP-formaatissa — skanneri tunnistaa app:"VRAPP"
+  const id     = 'TICKET-' + Math.floor(100000 + Math.random() * 900000);
+  const ticket = {
+    app:   'VRAPP',
+    id:    id,
+    train: train,
+    from:  from,
+    to:    to,
+    coach: +coach,
+    seat:  +seat,
+    type:  type,
+  };
+  const jsonStr = JSON.stringify(ticket);
+
   try {
-    await QRCode.toCanvas(document.getElementById('qr-canvas'), qrStr, {
-      width:220, margin:2, color:{dark:'#000',light:'#fff'}, errorCorrectionLevel:'L'
-    });
+    // ZXing MultiFormatWriter enkoodaa Aztec BitMatrixiksi
+    const writer  = new ZXing.MultiFormatWriter();
+    const matrix  = writer.encode(
+      jsonStr,
+      ZXing.BarcodeFormat.AZTEC,
+      300, 300,           // hints-kartta ei tarvita Aztec:lle
+      null
+    );
+    const canvas = document.getElementById('qr-canvas');
+    bitMatrixToCanvas(matrix, canvas, 300);
+
     document.getElementById('qr-id').textContent  = id;
-    document.getElementById('qr-det').textContent = `${train} · Vaunu ${coach} · Paikka ${seat} · ${from}→${to} · ${type}`;
+    document.getElementById('qr-det').textContent =
+      train + ' · Vaunu ' + coach + ' · Paikka ' + seat + ' · ' + from + '→' + to + ' · ' + type;
     document.getElementById('qr-box').classList.add('on');
-    toast('Lippu luotu: ' + id, 'ok');
-  } catch(e) { toast('QR-koodi epäonnistui', 'err'); }
+    toast('Aztec-lippu luotu: ' + id, 'ok');
+  } catch(e) {
+    console.error('Aztec encode error:', e);
+    toast('Aztec-koodi epäonnistui: ' + e.message, 'err');
+  }
 });
 
 // ── MATKALIPUT ──
