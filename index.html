@@ -346,7 +346,6 @@ html,body{height:100%;overflow:hidden;background:#e8e8e0;font-family:Arial,Helve
     <iframe
       id="wagon-frame"
       src="about:blank"
-      data-src="https://venaarauhassa.fi/train/2026-03-10/9"
       title="Vaunukartta"
       sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
     ></iframe>
@@ -354,7 +353,7 @@ html,body{height:100%;overflow:hidden;background:#e8e8e0;font-family:Arial,Helve
       <div style="font-size:42px">🚂</div>
       <p>Vaunukarttaa ei voitu ladata.<br>Tarkista internet-yhteys.</p>
       <button class="btn-vaihda" style="margin-top:6px"
-        onclick="window.open('https://venaarauhassa.fi/train/2026-03-10/9','_blank')">
+        onclick="var n=S.train.replace(/\D/g,''),d=new Date().toLocaleDateString('sv-SE');window.open('https://venaarauhassa.fi/train/'+d+'/'+n,'_blank')">
         Avaa selaimessa
       </button>
     </div>
@@ -501,7 +500,7 @@ html,body{height:100%;overflow:hidden;background:#e8e8e0;font-family:Arial,Helve
 <div id="toasts"></div>
 
 <!-- Ulkoiset kirjastot — ladataan vain verkosta -->
-<script src="https://unpkg.com/@zxing/library@latest/umd/index.min.js"></script>
+<script src="https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/qrcode@1.5.3/build/qrcode.min.js"></script>
@@ -688,8 +687,15 @@ function stopScan() {
 
 function handleScan(raw) {
   let t;
-  try { t = JSON.parse(raw); } catch(e) { toast('Virheellinen koodi', 'err'); return; }
-  if (!t.type || t.type !== 'vr-ticket') { toast('Ei VR-lippu', 'warn'); return; }
+  try { t = JSON.parse(raw); } catch(e) {
+    // Ei JSON - näytetään raakasisältö debuggausta varten
+    toast('Koodi luettu (ei VR-lippu): ' + raw.substring(0,40), 'warn', 5000);
+    return;
+  }
+  if (!t.type || t.type !== 'vr-ticket') {
+    toast('Tuntematon koodin tyyppi: ' + (t.type||'?'), 'warn', 5000);
+    return;
+  }
 
   const ex = S.tickets.find(x => x.ticket_id === t.ticket_id);
   if (ex && ex.used) {
@@ -777,13 +783,16 @@ document.getElementById('p-close-btn').addEventListener('click', closePopup);
 // ── VAUNUKARTTA (iframe — ei muuteta) ──
 function loadWagon() {
   const frame = document.getElementById('wagon-frame');
-  if (!S.wagonLoaded) {
-    S.wagonLoaded = true;
-    frame.src = frame.dataset.src;
-    frame.addEventListener('load', () =>
-      document.getElementById('iframe-fallback').classList.remove('show'));
-    frame.addEventListener('error', () =>
-      document.getElementById('iframe-fallback').classList.add('show'));
+  const num   = S.train.replace(/\D/g, ''); // IC68 -> 68, S9 -> 9
+  const date  = new Date().toLocaleDateString('sv-SE'); // YYYY-MM-DD
+  const url   = 'https://venaarauhassa.fi/train/' + date + '/' + num;
+  const prev  = frame.getAttribute('data-loaded-url') || '';
+  if (prev !== url) {
+    frame.setAttribute('data-loaded-url', url);
+    frame.src = url;
+    document.getElementById('iframe-fallback').classList.remove('show');
+    frame.onload  = () => document.getElementById('iframe-fallback').classList.remove('show');
+    frame.onerror = () => document.getElementById('iframe-fallback').classList.add('show');
   }
 }
 
@@ -860,9 +869,10 @@ document.getElementById('btn-gen').addEventListener('click', async () => {
   if (!from || !to || !coach || !seat) { toast('Täytä kaikki kentät', 'err'); return; }
   const id   = 'VR-' + Math.floor(100000 + Math.random() * 900000);
   const data = { type:'vr-ticket', ticket_id:id, train, from, to, coach:+coach, seat:+seat, ticket_type:type };
+  const qrStr = JSON.stringify(data);
   try {
-    await QRCode.toCanvas(document.getElementById('qr-canvas'), JSON.stringify(data), {
-      width:200, margin:2, color:{dark:'#000',light:'#fff'}, errorCorrectionLevel:'H'
+    await QRCode.toCanvas(document.getElementById('qr-canvas'), qrStr, {
+      width:220, margin:2, color:{dark:'#000',light:'#fff'}, errorCorrectionLevel:'L'
     });
     document.getElementById('qr-id').textContent  = id;
     document.getElementById('qr-det').textContent = `${train} · Vaunu ${coach} · Paikka ${seat} · ${from}→${to} · ${type}`;
