@@ -505,8 +505,68 @@ html,body{height:100%;overflow:hidden;background:#e8e8e0;font-family:Arial,Helve
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/qrcode@1.5.3/build/qrcode.min.js"></script>
+<!-- Firebase SDK (modular v10 compat-kerros — toimii suoraan scriptinä) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
 <script>
+// ══════════════════════════════════════════════════════════════
+//  FIREBASE — Alustus ja Firestore-validointi
+//
+//  TÄRKEÄÄ: Vaihda alla olevat arvot omista Firebase-projektin
+//  asetuksista (Firebase Console → Project Settings → Your apps)
+// ══════════════════════════════════════════════════════════════
+const FIREBASE_CONFIG = {
+  apiKey:            "KORVAA_TÄHÄN",
+  authDomain:        "PROJEKTI.firebaseapp.com",
+  projectId:         "PROJEKTI",
+  storageBucket:     "PROJEKTI.appspot.com",
+  messagingSenderId: "123456789",
+  appId:             "1:123456789:web:abcdef",
+};
+
+let db = null; // Firestore-instanssi, alustetaan alla
+
+(function initFirebase() {
+  try {
+    firebase.initializeApp(FIREBASE_CONFIG);
+    db = firebase.firestore();
+    console.log('%cFirebase OK', 'color:#00a651;font-weight:bold');
+  } catch(e) {
+    console.warn('Firebase init epäonnistui — käytetään vain localStoragea:', e.message);
+  }
+})();
+
+// ── LIPUN VALIDOINTI FIRESTORESTA ──
+// Palauttaa Promisen joka resolvoituu objektiin:
+//   { alreadyUsed: bool, usedTime: string|null }
+async function validateTicketFirestore(ticketId) {
+  if (!db) return { alreadyUsed: false, usedTime: null }; // offline-fallback
+
+  try {
+    const ref  = db.collection('tickets').doc(ticketId);
+    const snap = await ref.get();
+
+    if (snap.exists) {
+      // Lippu löytyi — jo käytetty
+      const data = snap.data();
+      return { alreadyUsed: true, usedTime: data.time || null };
+    } else {
+      // Ei ole vielä — merkitään käytetyksi
+      await ref.set({
+        used:  true,
+        time:  new Date().toISOString(),
+        train: '', // täytetään handleScan:ssa
+      });
+      return { alreadyUsed: false, usedTime: null };
+    }
+  } catch(e) {
+    console.warn('Firestore-virhe:', e.message);
+    // Verkkovirhe → sallitaan skannaus mutta varoitetaan
+    return { alreadyUsed: false, usedTime: null, firestoreError: e.message };
+  }
+}
+
 // ══════════════════════════════════════════════════════════════
 //  VR KONDUKTÖÖRI — TILA
 // ══════════════════════════════════════════════════════════════
@@ -748,71 +808,117 @@ function stopScan() {
 }
 
 // ── SKANNIN KÄSITTELY ──
-function handleScan(raw) {
+// Tukee molempia formaatteja:
+//   VRAPP:    { "app":"VRAPP", "id":"TICKET-xxx", "train":"IC68", ... }
+//   vr-ticket (vanha): { "type":"vr-ticket", "ticket_id":"VR-xxx", ... }
+async function handleScan(raw) {
   let t;
 
-  // Yritetään parsia JSON
+  // ── 1. Parsi JSON ──
   try { t = JSON.parse(raw); } catch(e) {
-    // Ei JSON — näytetään raakoteksti (debug-apuri)
     toast('Koodi luettu (ei VR-lippu): ' + raw.substring(0, 50), 'warn', 5000);
     vibe([100]);
     return;
   }
 
-  // Tarkistetaan lipputyyppi
-  if (!t.type || t.type !== 'vr-ticket') {
-    toast('Tuntematon koodin tyyppi: ' + (t.type || '?'), 'warn', 5000);
+  // ── 2. Tunnista lipputyyppi ──
+  const isVRAPP    = t.app === 'VRAPP';
+  const isLegacy   = t.type === 'vr-ticket';
+
+  if (!isVRAPP && !isLegacy) {
+    toast('Koodi luettu (ei VR-lippu): ' + JSON.stringify(t).substring(0, 50), 'warn', 5000);
     vibe([100]);
     return;
   }
 
-  // Onko lippu jo käytetty?
-  const ex = S.tickets.find(x => x.ticket_id === t.ticket_id);
-  if (ex && ex.used) {
-    beep('huom');
-    vibe([300, 100, 300, 100, 300]);
-    showPopup(ex, 'HUOM', false, true);
-    sendNotification('Lippu jo käytetty', t.train + ' · Vaunu ' + t.coach + ' · Paikka ' + t.seat);
-    toast('LIPPU JO KÄYTETTY', 'err');
-    return;
+  // ── 3. Normalisoi lippu yhteiseen muotoon ──
+  // VRAPP-kentät:  app, id, train, from, to, coach, seat, type
+  // Legacy-kentät: type, ticket_id, train, from, to, coach, seat, ticket_type
+  const ticket = {
+    ticket_id:   isVRAPP ? t.id          : t.ticket_id,
+    train:       t.train  || '?',
+    from:        t.from   || '?',
+    to:          t.to     || '?',
+    coach:       t.coach  || '?',
+    seat:        t.seat   || '?',
+    ticket_type: isVRAPP ? (t.type || '?') : (t.ticket_type || '?'),
+    note:        '',
+    used_time:   null,
+  };
+
+  // ── 4. Näytä "Tarkistetaan..." -status ──
+  const statusEl = document.getElementById('scan-status');
+  statusEl.textContent = 'Tarkistetaan Firestoresta...';
+
+  // ── 5. Firestore-validointi ──
+  let alreadyUsed = false;
+  let usedTime    = null;
+  let fsError     = null;
+
+  if (isVRAPP && db) {
+    // VRAPP-liput tarkistetaan aina Firestoresta
+    const result = await validateTicketFirestore(ticket.ticket_id);
+    alreadyUsed = result.alreadyUsed;
+    usedTime    = result.usedTime;
+    fsError     = result.firestoreError || null;
+
+    // Jos OK, kirjoita myös junan numero Firestoreen
+    if (!alreadyUsed && db) {
+      try {
+        await db.collection('tickets').doc(ticket.ticket_id).update({ train: ticket.train });
+      } catch(e) {}
+    }
+  } else {
+    // Legacy-liput: tarkistetaan localStoragesta
+    const ex = S.tickets.find(x => x.ticket_id === ticket.ticket_id);
+    if (ex && ex.used) {
+      alreadyUsed = true;
+      usedTime    = ex.used_time || null;
+    }
   }
 
-  // Tallennetaan lippu
-  const rec = {
-    ticket_id:   t.ticket_id,
-    train:       t.train,
-    coach:       t.coach,
-    seat:        t.seat,
-    ticket_type: t.ticket_type,
-    from:        t.from,
-    to:          t.to,
-    used:        true,
-    used_time:   new Date().toISOString(),
-    note:        ex?.note || '',
-  };
-  if (ex) Object.assign(ex, rec); else S.tickets.push(rec);
+  // Palautetaan status-teksti
+  statusEl.textContent = 'AKTIIVINEN – odottaa koodia';
+
+  // ── 6. Tallennetaan localStorageen (legacy + VRAPP molemmat) ──
+  ticket.used      = true;
+  ticket.used_time = usedTime || new Date().toISOString();
+  const ex = S.tickets.find(x => x.ticket_id === ticket.ticket_id);
+  if (ex) Object.assign(ex, ticket); else S.tickets.push(ticket);
   localStorage.setItem('vr_tickets', JSON.stringify(S.tickets));
 
-  const match = t.train === S.train;
+  // ── 7. Tarkista junavertailu ──
+  const match = ticket.train === S.train;
 
-  // ── Ääni ──
-  beep(match ? 'ok' : 'huom');
+  // ── 8. Ääni + värinä ──
+  if (alreadyUsed) {
+    beep('huom');
+    vibe([300, 100, 300, 100, 300]);
+  } else {
+    beep(match ? 'ok' : 'huom');
+    vibe(match ? [80] : [200, 80, 200]);
+  }
 
-  // ── Värinä ──
-  vibe(match ? [80] : [200, 80, 200]);
-
-  // ── Ilmoitus ──
+  // ── 9. Järjestelmäilmoitus ──
   sendNotification(
-    'Lippu tarkastettu',
-    t.train + ' · Vaunu ' + t.coach + ' · Paikka ' + t.seat
+    alreadyUsed ? 'Lippu jo käytetty ⚠️' : 'Lippu tarkastettu ✓',
+    ticket.train + ' · Vaunu ' + ticket.coach + ' · Paikka ' + ticket.seat
   );
 
-  // ── Popup + Toast ──
-  showPopup(rec, match ? 'OK' : 'HUOM', match, false);
-  toast(
-    (match ? 'OK' : 'HUOM') + ': ' + t.train + ' · ' + t.coach + '-' + t.seat,
-    match ? 'ok' : 'warn'
-  );
+  // ── 10. Popup ──
+  showPopup(ticket, alreadyUsed ? 'HUOM' : (match ? 'OK' : 'HUOM'), match, alreadyUsed, fsError);
+
+  // ── 11. Toast ──
+  if (alreadyUsed) {
+    toast('LIPPU JO KÄYTETTY', 'err');
+  } else if (fsError) {
+    toast('Firestore-virhe — hyväksytty offline: ' + ticket.ticket_id, 'warn', 5000);
+  } else {
+    toast(
+      (match ? 'OK' : 'HUOM') + ': ' + ticket.train + ' · ' + ticket.coach + '-' + ticket.seat,
+      match ? 'ok' : 'warn'
+    );
+  }
 }
 
 // ── ILMOITUKSET (Apple/Android push) ──
@@ -840,7 +946,7 @@ function sendNotification(title, body) {
 }
 
 // ── POPUP ──
-function showPopup(ticket, status, match, alreadyUsed) {
+function showPopup(ticket, status, match, alreadyUsed, fsError) {
   document.getElementById('p-train').textContent = ticket.train || '—';
   const ps = document.getElementById('p-status');
   ps.textContent = status;
@@ -860,7 +966,10 @@ function showPopup(ticket, status, match, alreadyUsed) {
     const t = ticket.used_time
       ? new Date(ticket.used_time).toLocaleTimeString('fi-FI', {hour:'2-digit', minute:'2-digit'})
       : '?';
-    warn.textContent = 'LIPPU ON JO KÄYTETTY kello ' + t;
+    warn.textContent = '⚠️ JO TARKASTETTU kello ' + t;
+    warn.classList.add('on');
+  } else if (fsError) {
+    warn.textContent = '⚠️ Offline — Firestore ei saatavilla';
     warn.classList.add('on');
   } else if (!match) {
     warn.textContent = 'HUOM: Lippu junalle ' + ticket.train + ' – väärä juna!';
