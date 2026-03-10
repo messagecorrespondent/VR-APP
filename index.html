@@ -693,6 +693,7 @@ function toast(msg, type = 'ok', ms = 3000) {
 }
 
 // ── ÄÄNI ──
+// ── ÄÄNI ──
 // Yritetään ensin /sounds/beep.mp3 (tai /sounds/huom.mp3)
 // Jos tiedostoa ei ole, fallback AudioContext-synteesiin
 function beep(type) {
@@ -771,40 +772,21 @@ function startScan() {
         (result, err) => {
           if (result) {
             const now = Date.now();
+            // Estä sama koodi 2.5s sisällä
+            if (result.text === S.lastCode && now - S.lastTime < 2000) return; // 2s cooldown
+            S.lastCode  = result.text;
+            S.lastTime  = now;
 
-            // ── Dekoodaus ──
-            // Aztec-koodeilla käytetään getRawBytes() + latin1 jotta
-            // VR-matkustajalippujen binääridata säilyy ehjänä.
-            // QR ja muut koodit käyttävät result.text kuten ennenkin.
+            // Näytä koodin tyyppi status-rivissä hetkeksi
             const fmt = result.getBarcodeFormat
               ? ZXing.BarcodeFormat[result.getBarcodeFormat()] || 'KOODI'
               : 'KOODI';
-
-            let raw = result.text; // oletus kaikille koodeille
-            if (fmt === 'AZTEC') {
-              try {
-                const bytes = result.getRawBytes();
-                if (bytes && bytes.length > 0) {
-                  raw = new TextDecoder('latin1').decode(bytes);
-                }
-              } catch(e) {
-                // getRawBytes ei saatavilla tässä ZXing-versiossa → käytetään result.text
-                raw = result.text;
-              }
-            }
-
-            // Cooldown: vertaa dekoodattuun tekstiin
-            if (raw === S.lastCode && now - S.lastTime < 2000) return; // 2s cooldown
-            S.lastCode = raw;
-            S.lastTime = now;
-
-            // Näytä koodin tyyppi status-rivissä hetkeksi
             status.textContent = fmt + ' luettu ✓';
             setTimeout(() => {
               if (S.scanning) status.textContent = 'AKTIIVINEN – odottaa koodia';
             }, 2000);
 
-            handleScan(raw);
+            handleScan(result.text);
           }
           // err on normaali kun yhtään koodia ei löydy kehyksestä — ei logata
         }
