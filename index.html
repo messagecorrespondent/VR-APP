@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#00853e" />
+  <title>VR Conductor</title>
+
+  <!-- PWA manifest inline (no server needed) -->
+  <link rel="manifest" href="data:application/json,%7B%22name%22%3A%22VR%20Conductor%22%2C%22short_name%22%3A%22VR%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%2300853e%22%2C%22theme_color%22%3A%22%2300853e%22%7D" />
+
+  <style>
+    /* ============================================================
+       CSS VARIABLES & RESET
+       Kaikki värit ja mitat on määritelty tässä, helppo muuttaa
+    ============================================================ */
+    :root {
+      --vr-green:       #00853e;
+      --vr-green-dark:  #006630;
+      --vr-green-light: #00a84f;
+      --bg:             #0f1a14;
+      --bg2:            #162219;
+      --surface:        #1e2e23;
+      --surface2:       #253529;
+      --border:         #2e4235;
+      --text:           #e8f5ec;
+      --text-dim:       #7aab8a;
+      --text-muted:     #4a7358;
+      --accent:         #4dff8f;
+      --warn:           #ffb020;
+      --danger:         #ff4444;
+      --radius:         12px;
+      --radius-sm:      8px;
+      --bar-h:          56px;
+      --bottom-h:       68px;
+      --font-main:      'Courier New', 'Lucida Console', monospace;
+      --font-display:   Georgia, 'Times New Roman', serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-main);
+      font-size: 14px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ============================================================
+       APP SHELL — koko näytön layout
+    ============================================================ */
+    #app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      height: 100dvh; /* dynamic viewport height, tärkeä mobiilissa */
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* ============================================================
+       TOP BAR — vihreä VR-tyylinen yläpalkki
+    ============================================================ */
+    #top-bar {
+      flex-shrink: 0;
+      height: var(--bar-h);
+      background: var(--vr-green);
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      gap: 10px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.5);
+      z-index: 100;
+      position: relative;
+    }
+
+    /* VR-logo */
+    #vr-logo {
+      font-family: var(--font-display);
+      font-size: 22px;
+      font-weight: bold;
+      letter-spacing: -1px;
+      color: #fff;
+      background: rgba(255,255,255,0.15);
+      border: 2px solid rgba(255,255,255,0.4);
+      padding: 2px 8px;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+
+    /* Junanumero */
+    #train-badge {
+      font-size: 15px;
+      font-weight: bold;
+      color: #fff;
+      letter-spacing: 1px;
+      background: rgba(0,0,0,0.2);
+      padding: 4px 10px;
+      border-radius: var(--radius-sm);
+      flex-shrink: 0;
+    }
+
+    /* Reitti */
+    #route-badge {
+      font-size: 13px;
+      color: rgba(255,255,255,0.85);
+      letter-spacing: 2px;
+      flex: 1;
+    }
+
+    /* Hampurilaisvalikko-nappi */
+    #menu-btn {
+      width: 40px;
+      height: 40px;
+      background: rgba(0,0,0,0.2);
+      border: none;
+      border-radius: var(--radius-sm);
+      color: #fff;
+      font-size: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s;
+      flex-shrink: 0;
+    }
+    #menu-btn:active { background: rgba(0,0,0,0.4); }
+
+    /* ============================================================
+       TRAIN INFO BAR — tiedot + Vaihda-nappi
+    ============================================================ */
+    #train-info-bar {
+      flex-shrink: 0;
+      height: 44px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 14px;
+      gap: 10px;
+      z-index: 90;
+    }
+
+    #train-info-text {
+      flex: 1;
+      font-size: 13px;
+      color: var(--text-dim);
+      letter-spacing: 0.5px;
+    }
+
+    #train-info-text span {
+      color: var(--text);
+      font-weight: bold;
+    }
+
+    /* LED-tyylinen tilaindikaattori */
+    #status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 6px var(--accent);
+      animation: pulse-dot 2s infinite;
+      flex-shrink: 0;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    #change-train-btn {
+      background: var(--vr-green-dark);
+      border: 1px solid var(--vr-green);
+      color: #fff;
+      font-family: var(--font-main);
+      font-size: 12px;
+      font-weight: bold;
+      letter-spacing: 1px;
+      padding: 6px 14px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      flex-shrink: 0;
+    }
+    #change-train-btn:active {
+      background: var(--vr-green);
+      transform: scale(0.96);
+    }
+
+    /* ============================================================
+       MAIN CONTENT — täyttää jäljelle jäävän tilan
+    ============================================================ */
+    #main-content {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+      background: var(--bg2);
+    }
+
+    /* ============================================================
+       IFRAME — vaunukartta
+    ============================================================ */
+    #wagon-frame {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
+      background: var(--bg2);
+    }
+
+    /* iframe-virheilmoitus, jos lataus epäonnistuu */
+    #iframe-error {
+      display: none;
+      position: absolute;
+      inset: 0;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 16px;
+      background: var(--bg2);
+      color: var(--text-dim);
+      text-align: center;
+      padding: 24px;
+    }
+    #iframe-error.show { display: flex; }
+    #iframe-error .icon { font-size: 48px; opacity: 0.4; }
+    #iframe-error p { font-size: 13px; line-height: 1.6; max-width: 260px; }
+
+    /* ============================================================
+       MENU OVERLAY — ruudukkovaihde
+    ============================================================ */
+    #menu-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(10, 20, 13, 0.97);
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+      gap: 20px;
+      transform: translateY(-100%);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      overflow-y: auto;
+    }
+    #menu-overlay.open { transform: translateY(0); }
+
+    #menu-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    #menu-title {
+      font-size: 11px;
+      letter-spacing: 3px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+    #menu-close {
+      width: 36px;
+      height: 36px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      color: var(--text);
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Ruudukko valikkonapeille */
+    #menu-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .menu-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 8px 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, transform 0.1s;
+      text-align: center;
+    }
+    .menu-item:active {
+      background: var(--surface2);
+      border-color: var(--vr-green);
+      transform: scale(0.95);
+    }
+
+    .menu-item-icon {
+      font-size: 26px;
+      line-height: 1;
+    }
+    .menu-item-label {
+      font-size: 10px;
+      letter-spacing: 1.5px;
+      color: var(--text-dim);
+      font-weight: bold;
+    }
+
+    /* Korostettu Skannaa-nappi valikossa */
+    .menu-item.featured {
+      border-color: var(--vr-green);
+      background: linear-gradient(135deg, var(--vr-green-dark), var(--surface));
+    }
+    .menu-item.featured .menu-item-label { color: #fff; }
+
+    /* ============================================================
+       BOTTOM ACTION BAR — kiinteä alapalkki
+    ============================================================ */
+    #bottom-bar {
+      flex-shrink: 0;
+      height: var(--bottom-h);
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 8px 12px;
+      gap: 10px;
+      z-index: 100;
+    }
+
+    .bottom-btn {
+      flex: 1;
+      height: 48px;
+      border: none;
+      border-radius: var(--radius);
+      font-family: var(--font-main);
+      font-size: 13px;
+      font-weight: bold;
+      letter-spacing: 2px;
+      cursor: pointer;
+      transition: transform 0.1s, opacity 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .bottom-btn:active { transform: scale(0.96); opacity: 0.85; }
+
+    /* Skannaa — pääväri */
+    #btn-scan {
+      background: var(--vr-green);
+      color: #fff;
+      box-shadow: 0 0 16px rgba(0,133,62,0.4);
+    }
+
+    /* Aikataulu — toissijainen */
+    #btn-schedule {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+    }
+
+    /* ============================================================
+       TICKET SCAN POPUP — lipuntarkistusikkuna
+    ============================================================ */
+    #popup-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      z-index: 300;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+      backdrop-filter: blur(3px);
+    }
+    #popup-backdrop.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    #ticket-popup {
+      background: var(--surface);
+      border: 2px solid var(--border);
+      border-radius: 18px;
+      width: min(320px, 90vw);
+      overflow: hidden;
+      transform: scale(0.85) translateY(20px);
+      transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+      box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+    }
+    #popup-backdrop.visible #ticket-popup {
+      transform: scale(1) translateY(0);
+    }
+
+    /* Popupin yläosa — tila-indikaattori */
+    #popup-header {
+      padding: 16px 20px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+
+    #popup-vr-logo {
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: bold;
+      color: #fff;
+      background: var(--vr-green);
+      padding: 2px 10px;
+      border-radius: 4px;
+    }
+
+    #popup-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 20px;
+      font-weight: bold;
+      letter-spacing: 2px;
+    }
+    #popup-status.ok   { color: var(--accent); }
+    #popup-status.warn { color: var(--warn); }
+
+    #popup-status-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+    }
+    .ok   #popup-status-icon { background: rgba(77,255,143,0.15); }
+    .warn #popup-status-icon { background: rgba(255,176,32,0.15); }
+
+    /* Popupin pääsisältö */
+    #popup-body {
+      padding: 18px 20px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .popup-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .popup-label {
+      font-size: 10px;
+      letter-spacing: 2px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .popup-value {
+      font-size: 16px;
+      font-weight: bold;
+      color: var(--text);
+      letter-spacing: 1px;
+    }
+
+    .popup-value.big {
+      font-size: 22px;
+      letter-spacing: 2px;
+    }
+
+    /* Lipputyyppi-badge */
+    #ticket-type-badge {
+      display: inline-block;
+      padding: 4px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: bold;
+      letter-spacing: 2px;
+    }
+    .type-lapsi  { background: rgba(77,255,143,0.12); color: var(--accent); border: 1px solid rgba(77,255,143,0.3); }
+    .type-aikuinen { background: rgba(255,255,255,0.08); color: var(--text); border: 1px solid var(--border); }
+    .type-opiskelija { background: rgba(100,150,255,0.12); color: #88aaff; border: 1px solid rgba(100,150,255,0.3); }
+
+    /* Sulkemisnappi */
+    #popup-close {
+      margin: 0 20px 18px;
+      width: calc(100% - 40px);
+      height: 44px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text-dim);
+      font-family: var(--font-main);
+      font-size: 11px;
+      letter-spacing: 2px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    #popup-close:active { background: var(--border); }
+
+    /* Erotusviiva popupissa */
+    .popup-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 2px 0;
+    }
+
+    /* ============================================================
+       TOAST-ILMOITUS — lyhyt tietoviesti
+    ============================================================ */
+    #toast {
+      position: absolute;
+      bottom: calc(var(--bottom-h) + 12px);
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 8px 18px;
+      font-size: 12px;
+      letter-spacing: 1px;
+      color: var(--text-dim);
+      z-index: 250;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s, transform 0.2s;
+      white-space: nowrap;
+    }
+    #toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* ============================================================
+       DEMO-LIPPU NAPPI — testaamista varten
+    ============================================================ */
+    #demo-ticket-btn {
+      position: absolute;
+      bottom: calc(var(--bottom-h) + 14px);
+      right: 14px;
+      width: 44px;
+      height: 44px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      color: var(--text-muted);
+      font-size: 18px;
+      cursor: pointer;
+      z-index: 150;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    #demo-ticket-btn:active { background: var(--surface); border-color: var(--vr-green); }
+
+    /* ============================================================
+       SCROLLBAR — tumma teema
+    ============================================================ */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  </style>
+</head>
+<body>
+
+<!-- ================================================================
+     APP SHELL
+     Kaikki elementit ovat tässä yhdessä HTML-tiedostossa.
+     Ei tarvita palvelinta tai build-prosessia.
+================================================================ -->
+<div id="app">
+
+  <!-- ============================================================
+       TOP BAR — VR-logo, junanumero, reitti, valikkonappi
+  ============================================================ -->
+  <div id="top-bar">
+    <div id="vr-logo">VR</div>
+    <div id="train-badge">IC68</div>
+    <div id="route-badge">OL → HKI</div>
+    <button id="menu-btn" onclick="toggleMenu()" aria-label="Valikko">☰</button>
+  </div>
+
+  <!-- ============================================================
+       TRAIN INFO BAR — junan tiedot + Vaihda-nappi
+  ============================================================ -->
+  <div id="train-info-bar">
+    <div id="status-dot"></div>
+    <div id="train-info-text">
+      Juna: <span>InterCity 68</span> → Helsinki
+    </div>
+    <button id="change-train-btn" onclick="changeTrain()">VAIHDA</button>
+  </div>
+
+  <!-- ============================================================
+       MAIN CONTENT — vaunukartta iframessa
+  ============================================================ -->
+  <div id="main-content">
+
+    <!-- Vaunukartta ulkoisesta osoitteesta -->
+    <iframe
+      id="wagon-frame"
+      src="https://venaarauhassa.fi/train/2026-03-10/9"
+      title="Vaunukartta – InterCity 68"
+      loading="lazy"
+      sandbox="allow-scripts allow-same-origin allow-forms"
+    ></iframe>
+
+    <!-- Varaviesti jos iframe ei lataudu (esim. CSP-esto tai nettiyhteys puuttuu) -->
+    <div id="iframe-error">
+      <div class="icon">🚂</div>
+      <p>Vaunukarttaa ei voitu ladata.<br>Tarkista internet-yhteys tai avaa kartta selaimessa.</p>
+      <button id="change-train-btn" onclick="window.open('https://venaarauhassa.fi/train/2026-03-10/9','_blank')" style="margin-top:8px;">
+        AVAA SELAIMESSA
+      </button>
+    </div>
+
+    <!-- ============================================================
+         MENU OVERLAY — liukuva päällekkäinen valikko
+    ============================================================ -->
+    <div id="menu-overlay" role="dialog" aria-label="Päävalikko">
+      <div id="menu-header">
+        <span id="menu-title">KONDUKTÖÖRI VALIKKO</span>
+        <button id="menu-close" onclick="toggleMenu()">✕</button>
+      </div>
+
+      <!-- 3-sarakkeinen ruudukko -->
+      <div id="menu-grid">
+
+        <div class="menu-item" onclick="menuAction('aikataulu')">
+          <span class="menu-item-icon">🕐</span>
+          <span class="menu-item-label">AIKATAULU</span>
+        </div>
+
+        <div class="menu-item" onclick="menuAction('vaunukartta')">
+          <span class="menu-item-icon">🚃</span>
+          <span class="menu-item-label">VAUNUKARTTA</span>
+        </div>
+
+        <div class="menu-item" onclick="menuAction('lipunmyynti')">
+          <span class="menu-item-icon">🎟️</span>
+          <span class="menu-item-label">LIPUNMYYNTI</span>
+        </div>
+
+        <div class="menu-item" onclick="menuAction('muistio')">
+          <span class="menu-item-icon">📋</span>
+          <span class="menu-item-label">MUISTIO</span>
+        </div>
+
+        <!-- Korostettu päänappi -->
+        <div class="menu-item featured" onclick="startScan()">
+          <span class="menu-item-icon">📷</span>
+          <span class="menu-item-label">SKANNAA</span>
+        </div>
+
+        <div class="menu-item" onclick="menuAction('asetukset')">
+          <span class="menu-item-icon">⚙️</span>
+          <span class="menu-item-label">ASETUKSET</span>
+        </div>
+
+        <div class="menu-item" onclick="menuAction('liikenne')">
+          <span class="menu-item-icon">🛤️</span>
+          <span class="menu-item-label">LIIKENNE</span>
+        </div>
+
+        <div class="menu-item" onclick="menuAction('tietoja')">
+          <span class="menu-item-icon">ℹ️</span>
+          <span class="menu-item-label">TIETOJA</span>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ============================================================
+         TICKET POPUP — lipuntarkistustulos
+    ============================================================ -->
+    <div id="popup-backdrop" onclick="closePopupOnBackdrop(event)">
+      <div id="ticket-popup">
+
+        <!-- Yläosa: VR-logo + OK/HUOM tila -->
+        <div id="popup-header">
+          <div id="popup-vr-logo">VR</div>
+          <div id="popup-status" class="ok">
+            <div id="popup-status-icon">✓</div>
+            <span id="popup-status-text">OK</span>
+          </div>
+        </div>
+
+        <!-- Lippudata -->
+        <div id="popup-body">
+          <div class="popup-row">
+            <span class="popup-label">Juna</span>
+            <span class="popup-value big" id="popup-train">IC68</span>
+          </div>
+          <div class="popup-divider"></div>
+          <div class="popup-row">
+            <span class="popup-label">Reitti</span>
+            <span class="popup-value" id="popup-route">MI-LH</span>
+          </div>
+          <div class="popup-row">
+            <span class="popup-label">Vaunu / Paikka</span>
+            <span class="popup-value" id="popup-seat">2-59</span>
+          </div>
+          <div class="popup-divider"></div>
+          <div class="popup-row">
+            <span class="popup-label">Lipputyyppi</span>
+            <span id="ticket-type-badge" class="type-lapsi">LAPSI</span>
+          </div>
+        </div>
+
+        <!-- Sulje-nappi -->
+        <button id="popup-close" onclick="closePopup()">SULJE</button>
+
+      </div>
+    </div>
+
+    <!-- Demo-nappi — avaa testitiketin (poista tuotannosta) -->
+    <button id="demo-ticket-btn" onclick="showDemoTicket()" title="Demo: näytä testilippu">🎫</button>
+
+    <!-- Toast-ilmoitus -->
+    <div id="toast"></div>
+
+  </div><!-- /#main-content -->
+
+  <!-- ============================================================
+       BOTTOM BAR — kiinteä alapalkki, aina näkyvissä
+  ============================================================ -->
+  <div id="bottom-bar">
+    <button class="bottom-btn" id="btn-scan" onclick="startScan()">
+      📷 SKANNAA
+    </button>
+    <button class="bottom-btn" id="btn-schedule" onclick="menuAction('aikataulu')">
+      🕐 AIKATAULU
+    </button>
+  </div>
+
+</div><!-- /#app -->
+
+
+<script>
+/* ================================================================
+   SOVELLUKSEN TILA
+   Kaikki muuttuvat arvot tallennetaan tähän objektiin.
+================================================================ */
+const STATE = {
+  selectedTrain: 'IC68',
+  menuOpen: false,
+  popupOpen: false,
+  popupTimer: null,
+  POPUP_DURATION: 7000, // ms, kuinka kauan popup näkyy automaattisesti
+};
+
+/* ================================================================
+   DEMO-LIPUT — simuloidaan skannattavia lippuja
+================================================================ */
+const DEMO_TICKETS = [
+  { train: 'IC68', route: 'MI-LH',  seat: '2-59',  type: 'lapsi',      typeLabel: 'LAPSI'      },
+  { train: 'IC68', route: 'HKI-TKU', seat: '4-12', type: 'aikuinen',   typeLabel: 'AIKUINEN'   },
+  { train: 'IC70', route: 'OL-HKI', seat: '1-31',  type: 'opiskelija', typeLabel: 'OPISKELIJA' },
+];
+let demoIndex = 0;
+
+/* ================================================================
+   VALIKKO — avaa/sulje liukuva valikko
+================================================================ */
+function toggleMenu() {
+  STATE.menuOpen = !STATE.menuOpen;
+  const overlay = document.getElementById('menu-overlay');
+  overlay.classList.toggle('open', STATE.menuOpen);
+  // Päivitä hampurilaisnappi visuaalisesti
+  document.getElementById('menu-btn').textContent = STATE.menuOpen ? '✕' : '☰';
+}
+
+/* Suljetaan valikko, kun valitaan toiminto */
+function menuAction(action) {
+  toggleMenu();
+  showToast('Toiminto: ' + action.toUpperCase());
+}
+
+/* ================================================================
+   JUNAN VAIHTO — myöhemmin avautuu lista junista
+================================================================ */
+function changeTrain() {
+  showToast('Junan vaihto — tulossa!');
+}
+
+/* ================================================================
+   SKANNAUS — myöhemmin avaa kameran, nyt näyttää demon
+================================================================ */
+function startScan() {
+  if (STATE.menuOpen) toggleMenu();
+  showDemoTicket();
+}
+
+/* ================================================================
+   DEMO-LIPPU — näyttää vuorotellen eri testilippuja
+================================================================ */
+function showDemoTicket() {
+  const ticket = DEMO_TICKETS[demoIndex % DEMO_TICKETS.length];
+  demoIndex++;
+  openTicketPopup(ticket);
+}
+
+/* ================================================================
+   LIPPU-POPUP
+   ticket = { train, route, seat, type, typeLabel }
+================================================================ */
+function openTicketPopup(ticket) {
+  // Vertaa lipun junaa valittuun junaan
+  const match = ticket.train === STATE.selectedTrain;
+
+  // Päivitä popup-sisältö
+  document.getElementById('popup-train').textContent = ticket.train;
+  document.getElementById('popup-route').textContent = ticket.route;
+  document.getElementById('popup-seat').textContent  = ticket.seat;
+
+  const typeBadge = document.getElementById('ticket-type-badge');
+  typeBadge.textContent = ticket.typeLabel;
+  typeBadge.className = 'type-' + ticket.type;
+
+  // Tila: OK tai HUOM
+  const statusEl   = document.getElementById('popup-status');
+  const statusText = document.getElementById('popup-status-text');
+  const statusIcon = document.getElementById('popup-status-icon');
+
+  if (match) {
+    statusEl.className   = 'ok';
+    statusText.textContent = 'OK';
+    statusIcon.textContent = '✓';
+  } else {
+    statusEl.className   = 'warn';
+    statusText.textContent = 'HUOM';
+    statusIcon.textContent = '!';
+  }
+
+  // Näytä popup
+  const backdrop = document.getElementById('popup-backdrop');
+  backdrop.classList.add('visible');
+  STATE.popupOpen = true;
+
+  // Automaattinen sulkeminen 7 sekunnin kuluttua
+  if (STATE.popupTimer) clearTimeout(STATE.popupTimer);
+  STATE.popupTimer = setTimeout(closePopup, STATE.POPUP_DURATION);
+}
+
+/* Sulkee popupin */
+function closePopup() {
+  if (STATE.popupTimer) clearTimeout(STATE.popupTimer);
+  document.getElementById('popup-backdrop').classList.remove('visible');
+  STATE.popupOpen = false;
+}
+
+/* Sulkee popupin vain jos klikataan taustan (ei popupin sisällön) päälle */
+function closePopupOnBackdrop(e) {
+  if (e.target === document.getElementById('popup-backdrop')) {
+    closePopup();
+  }
+}
+
+/* ================================================================
+   TOAST — lyhyt tiedote ruudun alareunassa
+================================================================ */
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2200);
+}
+
+/* ================================================================
+   IFRAME-VIRHEENKÄSITTELY
+   Jos iframe ei lataudu (esim. palvelin estää),
+   näytetään varaviesti.
+================================================================ */
+(function setupIframe() {
+  const frame = document.getElementById('wagon-frame');
+  const errorEl = document.getElementById('iframe-error');
+
+  // Yritetään havaita latausvirhe
+  // Huom: CORS-rajoitukset estävät luotettavan virheen tunnistamisen,
+  // mutta timeout-tekniikka auttaa useimmissa tapauksissa.
+  let loaded = false;
+
+  frame.addEventListener('load', function() {
+    loaded = true;
+    // Jos iframe latautui tyhjänä (kaappaus), ei voida varmasti tietää
+    // ilman CORS-oikeuksia — pidetään virheviesti piilossa jos load tapahtui
+    errorEl.classList.remove('show');
+  });
+
+  frame.addEventListener('error', function() {
+    errorEl.classList.add('show');
+  });
+
+  // Timeout-varmuus: jos 10s ei tapahdu load-eventtia
+  setTimeout(function() {
+    if (!loaded) {
+      // Näytetään virheviesti, mutta iframe voi silti ladata hitaasti
+      // joten ei piiloteta iframea kokonaan
+    }
+  }, 10000);
+})();
+
+/* ================================================================
+   NÄPPÄIMISTÖN OIKOPOLUT (PC-kehitystä varten)
+   S = Skannaa demo-lippu
+   M = Valikko auki/kiinni
+   Esc = Sulje popup tai valikko
+================================================================ */
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    if (STATE.popupOpen) closePopup();
+    else if (STATE.menuOpen) toggleMenu();
+  }
+  if (e.key === 's' || e.key === 'S') startScan();
+  if (e.key === 'm' || e.key === 'M') toggleMenu();
+});
+
+/* ================================================================
+   PWA SERVICE WORKER REKISTERÖINTI
+   Tarvitaan kun sovellus ladataan HTTP-palvelimelta.
+   Paikallisessa file://-tilassa tätä ei rekisteröidä.
+================================================================ */
+if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  // Service worker -tiedosto pitää luoda erikseen palvelinasennusta varten
+  // navigator.serviceWorker.register('./sw.js');
+}
+
+/* Sovellus on valmis */
+console.log('%cVR Conductor UI käynnistetty', 'color: #00853e; font-weight: bold; font-size: 14px;');
+console.log('Pikanäppäimet: [S] Skannaa demo | [M] Valikko | [Esc] Sulje');
+</script>
+
+</body>
+</html>
