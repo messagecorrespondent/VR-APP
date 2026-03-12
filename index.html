@@ -11,35 +11,83 @@
 <meta name="theme-color" content="#00a651">
 <title>VR Konduktööri</title>
 <style>
+/* ── RESET ── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;overflow:hidden;background:#e8e8e0;font-family:Arial,Helvetica,sans-serif;-webkit-tap-highlight-color:transparent;user-select:none}
+
+/* ── APP SHELL ── */
 #app{display:flex;flex-direction:column;height:100vh;height:100dvh;overflow:hidden;position:relative}
-#topbar{flex-shrink:0;background:#00a651;padding-top:env(safe-area-inset-top,0px);z-index:100}
+
+/* ── TOP BAR ── */
+#topbar{
+  flex-shrink:0;
+  background:#00a651;
+  padding-top:env(safe-area-inset-top,0px);
+  z-index:100;
+}
 .tb-main{display:flex;align-items:center;padding:0 12px;height:60px;gap:10px}
 #vr-logo{height:36px;width:auto;flex-shrink:0}
 .tb-train{color:#fff;font-size:26px;font-weight:900;white-space:nowrap;flex-shrink:0}
 .tb-route{color:#fff;font-size:26px;font-weight:900;white-space:nowrap;flex:1}
-.tb-menu-btn{width:38px;height:38px;background:none;border:none;cursor:pointer;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px}
+.tb-menu-btn{
+  width:38px;height:38px;
+  background:none;border:none;cursor:pointer;flex-shrink:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
+}
 .tb-menu-btn span{display:block;width:26px;height:3px;background:#fff;border-radius:1px}
-.tb-sub{background:#fff;display:flex;align-items:center;justify-content:space-between;padding:6px 12px;border-bottom:1px solid #ccc;height:44px}
+.tb-sub{
+  background:#fff;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:6px 12px;border-bottom:1px solid #ccc;height:44px;
+}
 .tb-sub-txt{font-family:Arial,sans-serif;font-size:15px;color:#333}
-.btn-vaihda{background:#ddd;border:1px solid #aaa;color:#333;font-size:14px;font-family:Arial,sans-serif;padding:6px 16px;border-radius:3px;cursor:pointer;flex-shrink:0}
+.btn-vaihda{
+  background:#ddd;border:1px solid #aaa;color:#333;
+  font-size:14px;font-family:Arial,sans-serif;padding:6px 16px;
+  border-radius:3px;cursor:pointer;flex-shrink:0;
+}
 .btn-vaihda:active{background:#bbb}
+
+/* ── MAIN CONTENT ── */
 #content{flex:1;overflow:hidden;position:relative;background:#e8e8e0}
+
+/* ── VIEWS ── */
 .view{position:absolute;inset:0;display:none;flex-direction:column;overflow-y:auto;-webkit-overflow-scrolling:touch}
 .view.on{display:flex}
+
+/* ── HOME MENU GRID ── */
 #view-home{padding:10px;background:#e8e8e0}
 .menu-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.menu-card{background:#f5f5ee;border:2px solid #333;display:flex;align-items:center;justify-content:center;text-align:center;cursor:pointer;transition:.1s;min-height:110px;padding:8px}
+.menu-card{
+  background:#f5f5ee;border:2px solid #333;
+  display:flex;align-items:center;justify-content:center;
+  text-align:center;cursor:pointer;transition:.1s;
+  min-height:110px;padding:8px;
+}
 .menu-card:active{background:#ddd}
 .menu-card.small{min-height:54px;padding:6px 10px}
 .menu-card-txt{font-size:22px;font-weight:900;color:#111;line-height:1.15;text-transform:uppercase}
 .menu-card.small .menu-card-txt{font-size:16px}
-.shdr{display:flex;align-items:center;gap:8px;flex-shrink:0;background:#f5f5ee;border-bottom:2px solid #333;padding:8px 10px}
-.back-btn{background:none;border:2px solid #333;font-size:18px;font-weight:900;padding:2px 10px;cursor:pointer;font-family:Arial,sans-serif;color:#111}
+
+/* ── SCREEN HEADER ── */
+.shdr{
+  display:flex;align-items:center;gap:8px;
+  flex-shrink:0;
+  background:#f5f5ee;border-bottom:2px solid #333;
+  padding:8px 10px;
+}
+.back-btn{
+  background:none;border:2px solid #333;
+  font-size:18px;font-weight:900;padding:2px 10px;
+  cursor:pointer;font-family:Arial,sans-serif;color:#111;
+}
 .back-btn:active{background:#ddd}
 .shdr-title{font-size:18px;font-weight:900;text-transform:uppercase;color:#111}
+
+/* ── SCREEN INNER SCROLL ── */
 .view-inner{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:10px}
+
+/* ── SCANNER VIEW ── */
 #view-scanner{overflow:hidden}
 .scan-wrap{position:relative;flex:1;background:#000;overflow:hidden}
 #scan-video{width:100%;height:100%;object-fit:cover;display:block}
@@ -55,10 +103,14 @@ html,body{height:100%;overflow:hidden;background:#e8e8e0;font-family:Arial,Helve
 .scan-hint{margin-top:20px;font-size:13px;color:rgba(255,255,255,.85);background:rgba(0,0,0,.6);padding:7px 18px;font-weight:700;text-align:center}
 .scan-badge{position:absolute;top:14px;left:0;right:0;display:flex;justify-content:center}
 .scan-badge span{background:rgba(0,0,0,.7);color:#fff;font-size:12px;padding:5px 14px;font-weight:700;font-family:monospace}
+
+/* ── WAGON VIEW (iframe) ── */
 #view-wagon{overflow:hidden}
 #wagon-frame{width:100%;flex:1;border:none;display:block}
 #iframe-fallback{display:none;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:14px;color:#666;text-align:center;padding:24px;font-size:14px}
 #iframe-fallback.show{display:flex}
+
+/* ── TIMETABLE ── */
 .tt-list{display:flex;flex-direction:column;gap:0;position:relative}
 .tt-list::before{content:'';position:absolute;left:72px;top:16px;bottom:16px;width:2px;background:#ccc}
 .tt-row{display:flex;align-items:flex-start;gap:8px;padding:8px 0}
@@ -73,6 +125,8 @@ html,body{height:100%;overflow:hidden;background:#e8e8e0;font-family:Arial,Helve
 .tt-stn.past{color:#888}
 .tt-track{font-size:11px;color:#777;font-family:monospace}
 .tt-cancel{font-size:11px;color:#e8002d;font-weight:700}
+
+/* ── LIPUNMYYNTI / FORM ── */
 .form{display:flex;flex-direction:column;gap:10px}
 .flbl{font-size:12px;font-weight:700;text-transform:uppercase;display:block;margin-bottom:4px;color:#333}
 .finp,.fsel{background:#fff;border:2px solid #333;font-size:15px;font-family:Arial,sans-serif;padding:9px 10px;width:100%;outline:none;-webkit-appearance:none;color:#111}
@@ -80,27 +134,20 @@ html,body{height:100%;overflow:hidden;background:#e8e8e0;font-family:Arial,Helve
 .frow{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .gen-btn{background:#00a651;color:#fff;border:none;padding:13px;font-size:16px;font-weight:900;font-family:Arial,sans-serif;cursor:pointer;text-transform:uppercase}
 .gen-btn:active{background:#007a3c}
-/* ticket preview */
-.ticket-preview{background:#fff;border:3px solid #333;margin-top:12px;display:none;flex-direction:column;overflow:hidden}
-.ticket-preview.on{display:flex}
-.tp-green{background:#00a651;padding:10px 14px;display:flex;align-items:center;gap:10px}
-.tp-vr{color:#fff;font-size:22px;font-weight:900;letter-spacing:2px}
-.tp-train-lbl{color:rgba(255,255,255,.85);font-size:14px;font-weight:900}
-.tp-body{padding:14px}
-.tp-row{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
-.tp-field{display:flex;flex-direction:column}
-.tp-lbl{font-size:10px;font-weight:900;text-transform:uppercase;color:#777;letter-spacing:1px}
-.tp-val{font-size:22px;font-weight:900;color:#111;font-family:monospace}
-.tp-aztec{display:flex;justify-content:center;padding:10px 14px 14px}
-#aztec-canvas{border:2px solid #333}
-.tp-id{text-align:center;font-size:10px;font-family:monospace;font-weight:700;color:#555;padding-bottom:10px}
-/* matkaliput */
+.qr-box{background:#f5f5ee;border:2px solid #333;padding:16px;display:none;flex-direction:column;align-items:center;gap:10px}
+.qr-box.on{display:flex}
+#qr-canvas{border:2px solid #333}
+.qr-id{font-family:monospace;font-size:15px;font-weight:700}
+.qr-det{font-size:11px;color:#555;text-align:center;font-weight:700}
+
+/* ── MATKALIPUT ── */
 .tlist{display:flex;flex-direction:column;gap:6px}
 .titem{background:#f5f5ee;border:2px solid #333;padding:10px 12px;display:flex;align-items:flex-start;gap:8px;cursor:pointer}
 .titem:active{background:#ddd}
 .tdot{width:8px;height:8px;border:2px solid #333;margin-top:4px;flex-shrink:0}
 .tdot.ok{background:#00a651;border-color:#00a651}
 .tdot.huom{background:#ffd100;border-color:#cc8800}
+.tdot.err{background:#e8002d;border-color:#e8002d}
 .tinfo{flex:1}
 .tmain{font-size:14px;font-weight:900;font-family:monospace}
 .tsub{font-size:11px;color:#555;font-weight:700;margin-top:2px}
@@ -110,12 +157,15 @@ html,body{height:100%;overflow:hidden;background:#e8e8e0;font-family:Arial,Helve
 .stat{flex:1;background:#f5f5ee;border:2px solid #333;text-align:center;padding:8px 4px}
 .stat-n{font-size:20px;font-weight:900}
 .stat-l{font-size:9px;font-weight:700;text-transform:uppercase;color:#555;margin-top:2px}
+
+/* ── MUISTIO ── */
 .memo-area{width:100%;min-height:250px;background:#fff;border:2px solid #333;font-size:15px;font-family:Arial,sans-serif;padding:12px;outline:none;resize:vertical;line-height:1.5;color:#111}
 .memo-area:focus{border-color:#00a651}
 .save-btn{background:#f5f5ee;border:2px solid #333;font-size:14px;font-weight:900;padding:9px 18px;cursor:pointer;font-family:Arial,sans-serif;text-transform:uppercase;margin-top:8px}
 .save-btn:active{background:#ddd}
 .memo-info{background:#f5f5ee;border:2px solid #ccc;padding:10px 12px;font-size:12px;color:#555;line-height:1.5;margin-top:10px;font-weight:700}
-/* liikenne */
+
+/* ── LIIKENNE ── */
 #mapbox{width:100%;height:280px;border:2px solid #333;overflow:hidden;margin-bottom:10px}
 .tcards{display:flex;flex-direction:column;gap:6px}
 .tcard{background:#f5f5ee;border:2px solid #333;border-left:5px solid #333;padding:9px 12px}
@@ -124,26 +174,8 @@ html,body{height:100%;overflow:hidden;background:#e8e8e0;font-family:Arial,Helve
 .tcard.err{border-left-color:#e8002d}
 .tcard-t{font-size:13px;font-weight:900;text-transform:uppercase}
 .tcard-d{font-size:11px;color:#555;font-weight:700;margin-top:2px}
-/* liikennetiedotteet */
-.bull-list{display:flex;flex-direction:column;gap:6px}
-.bull-item{background:#f5f5ee;border:2px solid #333;border-left:5px solid #ffd100;padding:10px 12px}
-.bull-item.err{border-left-color:#e8002d}
-.bull-item.ok{border-left-color:#00a651}
-.bull-title{font-size:13px;font-weight:900;text-transform:uppercase;color:#111}
-.bull-desc{font-size:11px;color:#555;font-weight:700;margin-top:3px;line-height:1.4}
-.bull-time{font-size:10px;color:#888;font-family:monospace;font-weight:700;margin-top:4px}
-/* aikataulut */
-.train-list{display:flex;flex-direction:column;gap:6px}
-.train-item{background:#f5f5ee;border:2px solid #333;padding:10px 12px;cursor:pointer;display:flex;align-items:center;gap:10px}
-.train-item:active{background:#ddd}
-.train-num{font-size:17px;font-weight:900;font-family:monospace;color:#111;min-width:64px}
-.train-dest{flex:1}
-.train-dest-main{font-size:14px;font-weight:900;color:#111}
-.train-dest-sub{font-size:11px;color:#555;font-weight:700;margin-top:2px}
-.train-badge{font-size:11px;font-weight:900;padding:3px 7px;border:2px solid #ccc}
-.train-badge.ok{border-color:#00a651;color:#00a651}
-.train-badge.dly{border-color:#e8002d;color:#e8002d}
-/* asetukset */
+
+/* ── ASETUKSET ── */
 .sset-sec{margin-bottom:14px}
 .sset-sec-ttl{font-size:11px;font-weight:900;text-transform:uppercase;color:#555;letter-spacing:1px;margin-bottom:6px;padding-left:2px}
 .sset-card{background:#f5f5ee;border:2px solid #333;overflow:hidden}
@@ -160,15 +192,39 @@ html,body{height:100%;overflow:hidden;background:#e8e8e0;font-family:Arial,Helve
 .rinp{-webkit-appearance:none;width:100px;height:4px;background:#ccc;border:1px solid #aaa;outline:none}
 .rinp::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;background:#00a651;border:2px solid #007a3c;cursor:pointer}
 .rval{font-size:12px;font-family:monospace;font-weight:900;min-width:28px;text-align:right}
-/* bottom bar */
-#botbar{flex-shrink:0;background:#00a651;padding-bottom:env(safe-area-inset-bottom,0px);display:flex;z-index:100}
-.bot-btn{flex:1;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:900;text-transform:uppercase;cursor:pointer;border:none;background:none;font-family:Arial,sans-serif;height:54px;border-right:2px solid rgba(255,255,255,.3)}
+
+/* ── BOTTOM BAR ── */
+#botbar{
+  flex-shrink:0;
+  background:#00a651;
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  display:flex;
+  z-index:100;
+}
+.bot-btn{
+  flex:1;display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:18px;font-weight:900;text-transform:uppercase;
+  cursor:pointer;border:none;background:none;
+  font-family:Arial,sans-serif;letter-spacing:0.5px;
+  height:54px;border-right:2px solid rgba(255,255,255,.3);
+}
 .bot-btn:last-child{border-right:none}
 .bot-btn:active{background:rgba(0,0,0,.15)}
-/* popup */
-#popup-ov{position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
+
+/* ── POPUP ── */
+#popup-ov{
+  position:fixed;inset:0;z-index:999;
+  background:rgba(0,0,0,.5);
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;pointer-events:none;transition:opacity .2s;
+}
 #popup-ov.on{opacity:1;pointer-events:all}
-.popup{background:#f5f5ee;width:min(340px,calc(100vw - 20px));overflow:hidden;border:3px solid #333;transform:scale(.95);transition:transform .2s}
+.popup{
+  background:#f5f5ee;
+  width:min(340px,calc(100vw - 20px));
+  overflow:hidden;border:3px solid #333;
+  transform:scale(.95);transition:transform .2s;
+}
 #popup-ov.on .popup{transform:scale(1)}
 .pop-green{background:#00a651;padding:10px 16px;display:flex;align-items:center}
 #popup-vr-logo{height:38px;width:auto}
@@ -192,28 +248,32 @@ html,body{height:100%;overflow:hidden;background:#e8e8e0;font-family:Arial,Helve
 .pop-btn{flex:1;padding:9px;border:2px solid #333;background:#f5f5ee;font-size:13px;font-weight:700;font-family:Arial,sans-serif;cursor:pointer;text-transform:uppercase}
 .pop-btn.pri{background:#00a651;color:#fff;border-color:#00a651}
 .pop-btn:active{filter:brightness(.9)}
-/* sheet */
-#sheet-ov{position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity .2s}
+
+/* ── TRAIN SHEET ── */
+#sheet-ov{
+  position:fixed;inset:0;z-index:300;
+  background:rgba(0,0,0,.5);
+  display:flex;align-items:flex-end;
+  opacity:0;pointer-events:none;transition:opacity .2s;
+}
 #sheet-ov.on{opacity:1;pointer-events:all}
-.sheet{background:#e8e8e0;border-top:3px solid #333;width:100%;padding:16px 14px calc(16px + env(safe-area-inset-bottom,0px));transform:translateY(100%);transition:transform .25s cubic-bezier(.4,0,.2,1)}
+.sheet{
+  background:#e8e8e0;border-top:3px solid #333;
+  width:100%;padding:16px 14px calc(16px + env(safe-area-inset-bottom,0px));
+  transform:translateY(100%);transition:transform .25s cubic-bezier(.4,0,.2,1);
+}
 #sheet-ov.on .sheet{transform:translateY(0)}
 .sh-ttl{font-size:18px;font-weight:900;text-transform:uppercase;margin-bottom:14px}
-/* train detail */
-#train-detail-ov{position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.5);display:flex;flex-direction:column;opacity:0;pointer-events:none;transition:opacity .2s}
-#train-detail-ov.on{opacity:1;pointer-events:all}
-.train-detail-sheet{background:#e8e8e0;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1)}
-#train-detail-ov.on .train-detail-sheet{transform:translateY(0)}
-.td-header{background:#00a651;padding:14px;display:flex;align-items:center;gap:10px}
-.td-close{background:none;border:2px solid rgba(255,255,255,.6);color:#fff;font-size:16px;font-weight:900;padding:4px 12px;cursor:pointer;font-family:Arial,sans-serif}
-.td-title{color:#fff;font-size:20px;font-weight:900}
-.td-inner{padding:10px}
-/* toasts */
+
+/* ── TOASTS ── */
 #toasts{position:fixed;top:10px;left:10px;right:10px;z-index:1000;display:flex;flex-direction:column;gap:5px;pointer-events:none}
 .toast{background:#f5f5ee;border:2px solid #333;border-left:5px solid #333;padding:9px 12px;font-size:13px;font-weight:700;animation:toastIn .2s ease}
 .toast.ok{border-left-color:#00a651}
 .toast.err{border-left-color:#e8002d}
 .toast.warn{border-left-color:#ffd100}
 @keyframes toastIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── MISC ── */
 .loader{display:flex;flex-direction:column;align-items:center;padding:40px;gap:12px;color:#555;font-size:13px;font-weight:700;text-transform:uppercase}
 .spin{width:28px;height:28px;border:4px solid #ccc;border-top-color:#00a651;border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -226,12 +286,15 @@ html,body{height:100%;overflow:hidden;background:#e8e8e0;font-family:Arial,Helve
 <body>
 <div id="app">
 
+<!-- ── TOP BAR ── -->
 <header id="topbar">
   <div class="tb-main">
     <img id="vr-logo" src="logo.png" alt="VR">
     <div class="tb-train" id="tb-num">IC68</div>
     <div class="tb-route" id="tb-route">OL-HKI</div>
-    <button class="tb-menu-btn" id="btn-waffle" aria-label="Valikko"><span></span><span></span><span></span></button>
+    <button class="tb-menu-btn" id="btn-waffle" aria-label="Valikko">
+      <span></span><span></span><span></span>
+    </button>
   </div>
   <div class="tb-sub">
     <span class="tb-sub-txt"><span style="color:#555">Juna:&nbsp;</span><b id="tb-full">InterCity 68 » Helsinki</b></span>
@@ -239,6 +302,7 @@ html,body{height:100%;overflow:hidden;background:#e8e8e0;font-family:Arial,Helve
   </div>
 </header>
 
+<!-- ── MAIN CONTENT ── -->
 <div id="content">
 
   <!-- HOME -->
@@ -252,20 +316,22 @@ html,body{height:100%;overflow:hidden;background:#e8e8e0;font-family:Arial,Helve
       <div class="menu-card small" data-go="asetukset"><div class="menu-card-txt">ASETUKSET</div></div>
       <div class="menu-card small" data-go="liikenne"><div class="menu-card-txt">LIIKENNE</div></div>
       <div class="menu-card small" data-go="matkaliput"><div class="menu-card-txt">MATKALIPUT</div></div>
-      <div class="menu-card small" data-go="liikennetiedotteet"><div class="menu-card-txt">TIEDOTTEET</div></div>
-      <div class="menu-card small" data-go="aikataulut"><div class="menu-card-txt">AIKATAULUT</div></div>
     </div>
   </div>
 
   <!-- SCANNER -->
   <div class="view" id="view-scanner">
-    <div class="shdr"><button class="back-btn" data-go="home">←</button><span class="shdr-title">Skannaa lippu</span></div>
+    <div class="shdr">
+      <button class="back-btn" data-go="home">←</button>
+      <span class="shdr-title">Skannaa lippu</span>
+    </div>
     <div class="scan-wrap">
       <video id="scan-video" autoplay playsinline muted></video>
       <div class="scan-ov">
         <div class="scan-badge"><span id="scan-status">Käynnistetään kameraa...</span></div>
         <div class="scan-frame">
-          <div class="sc tl"></div><div class="sc tr"></div><div class="sc bl"></div><div class="sc br"></div>
+          <div class="sc tl"></div><div class="sc tr"></div>
+          <div class="sc bl"></div><div class="sc br"></div>
           <div class="scan-line"></div>
         </div>
         <div class="scan-hint">Pidä QR- tai Aztec-koodi kehyksen sisällä</div>
@@ -273,26 +339,45 @@ html,body{height:100%;overflow:hidden;background:#e8e8e0;font-family:Arial,Helve
     </div>
   </div>
 
-  <!-- VAUNUKARTTA -->
+  <!-- VAUNUKARTTA (iframe) -->
   <div class="view" id="view-wagon">
-    <div class="shdr"><button class="back-btn" data-go="home">←</button><span class="shdr-title">Vaunukartta</span></div>
-    <iframe id="wagon-frame" src="about:blank" title="Vaunukartta" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
+    <div class="shdr">
+      <button class="back-btn" data-go="home">←</button>
+      <span class="shdr-title">Vaunukartta</span>
+    </div>
+    <iframe
+      id="wagon-frame"
+      src="about:blank"
+      title="Vaunukartta"
+      sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+    ></iframe>
     <div id="iframe-fallback">
       <div style="font-size:42px">🚂</div>
       <p>Vaunukarttaa ei voitu ladata.<br>Tarkista internet-yhteys.</p>
-      <button class="btn-vaihda" style="margin-top:6px" onclick="var n=S.train.replace(/\D/g,''),d=new Date().toLocaleDateString('sv-SE');window.open('https://venaarauhassa.fi/train/'+d+'/'+n,'_blank')">Avaa selaimessa</button>
+      <button class="btn-vaihda" style="margin-top:6px"
+        onclick="var n=S.train.replace(/\D/g,''),d=new Date().toLocaleDateString('sv-SE');window.open('https://venaarauhassa.fi/train/'+d+'/'+n,'_blank')">
+        Avaa selaimessa
+      </button>
     </div>
   </div>
 
-  <!-- AIKATAULU (oma juna) -->
+  <!-- AIKATAULU -->
   <div class="view" id="view-aikataulu">
-    <div class="shdr"><button class="back-btn" data-go="home">←</button><span class="shdr-title">Aikataulu</span></div>
-    <div class="view-inner" id="tt-content"><div class="loader"><div class="spin"></div><span>Ladataan...</span></div></div>
+    <div class="shdr">
+      <button class="back-btn" data-go="home">←</button>
+      <span class="shdr-title">Aikataulu</span>
+    </div>
+    <div class="view-inner" id="tt-content">
+      <div class="loader"><div class="spin"></div><span>Ladataan...</span></div>
+    </div>
   </div>
 
-  <!-- LIPUNMYYNTI + AZTEC GENERATOR -->
+  <!-- LIPUNMYYNTI -->
   <div class="view" id="view-lipunmyynti">
-    <div class="shdr"><button class="back-btn" data-go="home">←</button><span class="shdr-title">Lipunmyynti</span></div>
+    <div class="shdr">
+      <button class="back-btn" data-go="home">←</button>
+      <span class="shdr-title">Lipunmyynti</span>
+    </div>
     <div class="view-inner">
       <div class="form">
         <div><label class="flbl">Juna</label><input class="finp" id="s-train" placeholder="IC68"></div>
@@ -304,36 +389,18 @@ html,body{height:100%;overflow:hidden;background:#e8e8e0;font-family:Arial,Helve
           <div><label class="flbl">Vaunu</label><input class="finp" id="s-coach" type="number" placeholder="1" min="1" max="60"></div>
           <div><label class="flbl">Paikka</label><input class="finp" id="s-seat" type="number" placeholder="1" min="1" max="100"></div>
         </div>
-        <div><label class="flbl">Matkustaja</label>
+        <div><label class="flbl">Lipputyyppi</label>
           <select class="fsel" id="s-type">
-            <option>AIKUINEN</option><option>LAPSI</option><option>OPISKELIJA</option>
-            <option>ELÄKELÄINEN</option><option>VR_HENKILÖKUNTA</option><option>VAPAALIPPU</option>
+            <option>AIKUINEN</option><option>LAPSI</option>
+            <option>OPISKELIJA</option><option>ELÄKELÄINEN</option>
+            <option>VR_HENKILÖKUNTA</option><option>VAPAALIPPU</option>
           </select>
         </div>
-        <div class="frow">
-          <div><label class="flbl">serviceID</label><input class="finp" id="s-sid" type="number" placeholder="45650"></div>
-          <div><label class="flbl">routeID</label><input class="finp" id="s-rid" type="number" placeholder="21604"></div>
-        </div>
-        <button class="gen-btn" id="btn-gen">LUO LIPPU →</button>
-        <!-- VR-style ticket preview (Feature 4) -->
-        <div class="ticket-preview" id="ticket-preview">
-          <div class="tp-green">
-            <div class="tp-vr">VR</div>
-            <div class="tp-train-lbl" id="tp-train-lbl">IC68</div>
-          </div>
-          <div class="tp-body">
-            <div class="tp-row">
-              <div class="tp-field"><span class="tp-lbl">VAUNU</span><span class="tp-val" id="tp-coach">—</span></div>
-              <div class="tp-field" style="text-align:center"><span class="tp-lbl">PAIKKA</span><span class="tp-val" id="tp-seat">—</span></div>
-              <div class="tp-field" style="text-align:right"><span class="tp-lbl">TYYPPI</span><span class="tp-val" style="font-size:14px" id="tp-type">—</span></div>
-            </div>
-            <div class="tp-row">
-              <div class="tp-field"><span class="tp-lbl">LÄHTÖ</span><span class="tp-val" style="font-size:16px" id="tp-from">—</span></div>
-              <div class="tp-field" style="text-align:right"><span class="tp-lbl">MÄÄRÄNPÄÄ</span><span class="tp-val" style="font-size:16px" id="tp-to">—</span></div>
-            </div>
-          </div>
-          <div class="tp-aztec"><canvas id="aztec-canvas"></canvas></div>
-          <div class="tp-id" id="tp-id">—</div>
+        <button class="gen-btn" id="btn-gen">LIPPUA →</button>
+        <div class="qr-box" id="qr-box">
+          <canvas id="qr-canvas"></canvas>
+          <div class="qr-id" id="qr-id">—</div>
+          <div class="qr-det" id="qr-det">—</div>
         </div>
       </div>
     </div>
@@ -341,13 +408,19 @@ html,body{height:100%;overflow:hidden;background:#e8e8e0;font-family:Arial,Helve
 
   <!-- MATKALIPUT -->
   <div class="view" id="view-matkaliput">
-    <div class="shdr"><button class="back-btn" data-go="home">←</button><span class="shdr-title">Matkaliput</span></div>
+    <div class="shdr">
+      <button class="back-btn" data-go="home">←</button>
+      <span class="shdr-title">Matkaliput</span>
+    </div>
     <div class="view-inner" id="tickets-content"></div>
   </div>
 
   <!-- MUISTIO -->
   <div class="view" id="view-muistio">
-    <div class="shdr"><button class="back-btn" data-go="home">←</button><span class="shdr-title">Muistio</span></div>
+    <div class="shdr">
+      <button class="back-btn" data-go="home">←</button>
+      <span class="shdr-title">Muistio</span>
+    </div>
     <div class="view-inner">
       <textarea class="memo-area" id="memo-area" placeholder="Kirjoita muistiinpanoja tähän..."></textarea>
       <button class="save-btn" id="btn-save-memo">TALLENNA</button>
@@ -357,43 +430,41 @@ html,body{height:100%;overflow:hidden;background:#e8e8e0;font-family:Arial,Helve
 
   <!-- LIIKENNE -->
   <div class="view" id="view-liikenne">
-    <div class="shdr"><button class="back-btn" data-go="home">←</button><span class="shdr-title">Liikenne</span></div>
-    <div class="view-inner"><div id="mapbox"></div><div class="tcards" id="tcards"></div></div>
-  </div>
-
-  <!-- LIIKENNETIEDOTTEET (Feature 1) -->
-  <div class="view" id="view-liikennetiedotteet">
-    <div class="shdr"><button class="back-btn" data-go="home">←</button><span class="shdr-title">Liikennetiedotteet</span></div>
-    <div class="view-inner" id="bull-content"><div class="loader"><div class="spin"></div><span>Ladataan tiedotteita...</span></div></div>
-  </div>
-
-  <!-- AIKATAULUT live trains (Feature 2) -->
-  <div class="view" id="view-aikataulut">
-    <div class="shdr"><button class="back-btn" data-go="home">←</button><span class="shdr-title">Aikataulut</span></div>
-    <div class="view-inner" id="aikataulut-content"><div class="loader"><div class="spin"></div><span>Ladataan junia...</span></div></div>
+    <div class="shdr">
+      <button class="back-btn" data-go="home">←</button>
+      <span class="shdr-title">Liikenne</span>
+    </div>
+    <div class="view-inner">
+      <div id="mapbox"></div>
+      <div class="tcards" id="tcards"></div>
+    </div>
   </div>
 
   <!-- ASETUKSET -->
   <div class="view" id="view-asetukset">
-    <div class="shdr"><button class="back-btn" data-go="home">←</button><span class="shdr-title">Asetukset</span></div>
+    <div class="shdr">
+      <button class="back-btn" data-go="home">←</button>
+      <span class="shdr-title">Asetukset</span>
+    </div>
     <div class="view-inner" id="settings-content"></div>
   </div>
 
 </div><!-- /#content -->
 
+<!-- ── BOTTOM BAR ── -->
 <nav id="botbar">
   <button class="bot-btn" id="btn-bot-scan">SKANNAA</button>
-  <button class="bot-btn" data-go="liikennetiedotteet">TIEDOTTEET</button>
-  <button class="bot-btn" data-go="aikataulut">JUNAT</button>
   <button class="bot-btn" id="btn-bot-quick"><span id="bq-lbl">AIKATAULU</span></button>
 </nav>
 
 </div><!-- /#app -->
 
-<!-- POPUP (ei muutettu) -->
+<!-- ── POPUP ── -->
 <div id="popup-ov">
   <div class="popup">
-    <div class="pop-green"><img id="popup-vr-logo" src="logo.png" alt="VR"></div>
+    <div class="pop-green">
+      <img id="popup-vr-logo" src="logo.png" alt="VR">
+    </div>
     <div class="pop-body">
       <div class="pop-row1">
         <span class="pop-train" id="p-train">IC68</span>
@@ -415,18 +486,7 @@ html,body{height:100%;overflow:hidden;background:#e8e8e0;font-family:Arial,Helve
   </div>
 </div>
 
-<!-- TRAIN DETAIL SHEET (Feature 2) -->
-<div id="train-detail-ov">
-  <div class="train-detail-sheet">
-    <div class="td-header">
-      <button class="td-close" id="td-close-btn">←</button>
-      <span class="td-title" id="td-title">IC68</span>
-    </div>
-    <div class="td-inner" id="td-inner"><div class="loader"><div class="spin"></div><span>Ladataan...</span></div></div>
-  </div>
-</div>
-
-<!-- JUNANVAIHTO SHEET -->
+<!-- ── TRAIN SHEET ── -->
 <div id="sheet-ov">
   <div class="sheet">
     <div class="sh-ttl">Vaihda juna</div>
@@ -438,619 +498,888 @@ html,body{height:100%;overflow:hidden;background:#e8e8e0;font-family:Arial,Helve
   </div>
 </div>
 
+<!-- ── TOASTS ── -->
 <div id="toasts"></div>
 
-<!-- Kirjastot -->
+<!-- Ulkoiset kirjastot -->
 <script src="https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<!-- bwip-js Aztec-generointiin (Feature 3) -->
-<script src="https://unpkg.com/bwip-js@4.5.1/dist/bwip-js-min.js"></script>
+<script src="https://unpkg.com/qrcode@1.5.3/build/qrcode.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
 <script>
-// ── FIREBASE ──
+// ══════════════════════════════════════════════════════════════
+//  FIREBASE
+// ══════════════════════════════════════════════════════════════
 const FIREBASE_CONFIG = {
-  apiKey:"AIzaSyB-fZmOKY6MTRfVqiA6VgHZZ-xU2M-RbjM",
-  authDomain:"vr-ticket-system.firebaseapp.com",
-  projectId:"vr-ticket-system",
-  storageBucket:"vr-ticket-system.firebasestorage.app",
-  messagingSenderId:"149001603308",
-  appId:"1:149001603308:web:0d740dd27cd3149d563dc9",
+  apiKey:            "AIzaSyB-fZmOKY6MTRfVqiA6VgHZZ-xU2M-RbjM",
+  authDomain:        "vr-ticket-system.firebaseapp.com",
+  projectId:         "vr-ticket-system",
+  storageBucket:     "vr-ticket-system.firebasestorage.app",
+  messagingSenderId: "149001603308",
+  appId:             "1:149001603308:web:0d740dd27cd3149d563dc9",
 };
+
 let db = null;
-(function(){
-  try{ firebase.initializeApp(FIREBASE_CONFIG); db=firebase.firestore(); console.log('%cFirebase OK','color:#00a651;font-weight:bold'); }
-  catch(e){ console.warn('Firebase init epäonnistui:',e.message); }
+
+(function initFirebase() {
+  try {
+    firebase.initializeApp(FIREBASE_CONFIG);
+    db = firebase.firestore();
+    console.log('%cFirebase OK', 'color:#00a651;font-weight:bold');
+  } catch(e) {
+    console.warn('Firebase init epäonnistui — käytetään vain localStoragea:', e.message);
+  }
 })();
 
-async function validateTicketFirestore(id){
-  if(!db) return {alreadyUsed:false,usedTime:null};
-  try{
-    const ref=db.collection('tickets').doc(id), snap=await ref.get();
-    if(snap.exists){
-      const d=snap.data(); let t=null;
-      if(d.time&&d.time.toDate) t=d.time.toDate().toISOString();
-      else if(typeof d.time==='string') t=d.time;
-      return{alreadyUsed:true,usedTime:t};
+async function validateTicketFirestore(ticketId) {
+  if (!db) return { alreadyUsed: false, usedTime: null };
+  try {
+    const ref  = db.collection('tickets').doc(ticketId);
+    const snap = await ref.get();
+    if (snap.exists) {
+      const data = snap.data();
+      let usedTime = null;
+      if (data.time && data.time.toDate) {
+        usedTime = data.time.toDate().toISOString();
+      } else if (typeof data.time === 'string') {
+        usedTime = data.time;
+      }
+      return { alreadyUsed: true, usedTime };
     } else {
-      await ref.set({used:true,time:firebase.firestore.FieldValue.serverTimestamp(),train:''});
-      return{alreadyUsed:false,usedTime:null};
+      await ref.set({
+        used:  true,
+        time:  firebase.firestore.FieldValue.serverTimestamp(),
+        train: '',
+      });
+      return { alreadyUsed: false, usedTime: null };
     }
-  }catch(e){ return{alreadyUsed:false,usedTime:null,firestoreError:e.message}; }
+  } catch(e) {
+    console.warn('Firestore-virhe:', e.message);
+    return { alreadyUsed: false, usedTime: null, firestoreError: e.message };
+  }
 }
 
-// ── TILA ──
-const S={
-  train:  localStorage.getItem('vr_train') ||'IC68',
-  route:  localStorage.getItem('vr_route') ||'OL-HKI',
-  tickets:JSON.parse(localStorage.getItem('vr_tickets')||'[]'),
-  curView:'home', reader:null, scanning:false,
-  lastCode:'', lastTime:0, mapInst:null, markers:{}, popTimer:null,
-  g:k=>localStorage.getItem('vr_'+k),
-  s:(k,v)=>localStorage.setItem('vr_'+k,v),
+// ══════════════════════════════════════════════════════════════
+//  TILA
+// ══════════════════════════════════════════════════════════════
+const S = {
+  train:   localStorage.getItem('vr_train')   || 'IC68',
+  route:   localStorage.getItem('vr_route')   || 'OL-HKI',
+  tickets: JSON.parse(localStorage.getItem('vr_tickets') || '[]'),
+  curView: 'home',
+  reader:  null,
+  scanning: false,
+  lastCode: '', lastTime: 0,
+  mapInst: null, markers: {},
+  popTimer: null,
+  wagonLoaded: false,
+  g: k => localStorage.getItem('vr_' + k),
+  s: (k, v) => localStorage.setItem('vr_' + k, v),
 };
-const STA={HKI:'Helsinki',PSL:'Pasila',TPE:'Tampere',TKU:'Turku',OL:'Oulu',KUO:'Kuopio',JY:'Jyväskylä',MI:'Mikkeli',LH:'Lahti',RI:'Riihimäki',KV:'Kouvola',JNS:'Joensuu',SK:'Seinäjoki',VS:'Vaasa',RVM:'Rovaniemi',KEM:'Kemi',IMT:'Imatra',LPR:'Lappeenranta',HML:'Hämeenlinna',YV:'Ylivieska',IV:'Iisalmi',KOK:'Kokkola',PM:'Pieksämäki',EP:'Espoo'};
+
+const STA = {
+  HKI:'Helsinki',PSL:'Pasila',TPE:'Tampere',TKU:'Turku',OL:'Oulu',
+  KUO:'Kuopio',JY:'Jyväskylä',MI:'Mikkeli',LH:'Lahti',RI:'Riihimäki',
+  KV:'Kouvola',JNS:'Joensuu',SK:'Seinäjoki',VS:'Vaasa',RVM:'Rovaniemi',
+  KEM:'Kemi',IMT:'Imatra',LPR:'Lappeenranta',HML:'Hämeenlinna',
+  YV:'Ylivieska',IV:'Iisalmi',KOK:'Kokkola',PM:'Pieksämäki',EP:'Espoo',
+};
 
 // ── NAVIGOINTI ──
-function go(id){
-  if(S.curView==='scanner') stopScan();
-  document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
-  const el=document.getElementById('view-'+id);
-  if(el) el.classList.add('on');
-  S.curView=id;
-  if(id==='scanner')           startScan();
-  if(id==='aikataulu')         loadTimetable();
-  if(id==='matkaliput')        renderTickets();
-  if(id==='asetukset')         renderSettings();
-  if(id==='liikenne')          initMap();
-  if(id==='muistio')           document.getElementById('memo-area').value=localStorage.getItem('vr_memo')||'';
-  if(id==='lipunmyynti')       document.getElementById('s-train').value=S.train;
-  if(id==='wagon')             loadWagon();
-  if(id==='liikennetiedotteet') loadBulletins();
-  if(id==='aikataulut')        loadLiveTrains();
+function go(id) {
+  if (S.curView === 'scanner') stopScan();
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('on'));
+  const el = document.getElementById('view-' + id);
+  if (el) el.classList.add('on');
+  S.curView = id;
+  if (id === 'scanner')    startScan();
+  if (id === 'aikataulu')  loadTimetable();
+  if (id === 'matkaliput') renderTickets();
+  if (id === 'asetukset')  renderSettings();
+  if (id === 'liikenne')   initMap();
+  if (id === 'muistio')    document.getElementById('memo-area').value = localStorage.getItem('vr_memo') || '';
+  if (id === 'lipunmyynti') document.getElementById('s-train').value = S.train;
+  if (id === 'wagon')      loadWagon();
 }
-document.querySelectorAll('[data-go]').forEach(el=>el.addEventListener('click',()=>go(el.dataset.go)));
-document.getElementById('btn-waffle').addEventListener('click',()=>go(S.curView==='home'?'wagon':'home'));
+
+document.querySelectorAll('[data-go]').forEach(el =>
+  el.addEventListener('click', () => go(el.dataset.go))
+);
+
+document.getElementById('btn-waffle').addEventListener('click', () => {
+  go(S.curView === 'home' ? 'wagon' : 'home');
+});
 
 // ── TOPBAR ──
-const TTYPES={IC:'InterCity',S:'Pendolino',P:'Pikajuna',R:'Regio'};
-function trainName(t){for(const[p,n]of Object.entries(TTYPES))if(t.startsWith(p))return n+' '+t.slice(p.length);return t;}
-function routeEnd(r){const c=r.split('-').pop();return STA[c]||c;}
-function updateTop(){
-  document.getElementById('tb-num').textContent=S.train;
-  document.getElementById('tb-route').textContent=S.route;
-  document.getElementById('tb-full').textContent=trainName(S.train)+' » '+routeEnd(S.route);
-  localStorage.setItem('vr_train',S.train); localStorage.setItem('vr_route',S.route);
-  const st=document.getElementById('s-train'); if(st) st.value=S.train;
+const TTYPES = {IC:'InterCity',S:'Pendolino',P:'Pikajuna',R:'Regio'};
+function trainName(t) {
+  for (const [p, n] of Object.entries(TTYPES)) if (t.startsWith(p)) return n + ' ' + t.slice(p.length);
+  return t;
+}
+function routeEnd(r) { const c = r.split('-').pop(); return STA[c] || c; }
+
+function updateTop() {
+  document.getElementById('tb-num').textContent   = S.train;
+  document.getElementById('tb-route').textContent = S.route;
+  document.getElementById('tb-full').textContent  = trainName(S.train) + ' » ' + routeEnd(S.route);
+  localStorage.setItem('vr_train', S.train);
+  localStorage.setItem('vr_route', S.route);
+  if (document.getElementById('s-train'))
+    document.getElementById('s-train').value = S.train;
 }
 
-// ── JUNANVAIHTO ──
-const shOv=document.getElementById('sheet-ov');
-document.getElementById('btn-vaihda').addEventListener('click',()=>{
-  document.getElementById('sh-num').value=S.train;
-  document.getElementById('sh-route').value=S.route;
+// ── JUNANVAIHTO SHEET ──
+const shOv = document.getElementById('sheet-ov');
+document.getElementById('btn-vaihda').addEventListener('click', () => {
+  document.getElementById('sh-num').value   = S.train;
+  document.getElementById('sh-route').value = S.route;
   shOv.classList.add('on');
 });
-shOv.addEventListener('click',e=>{if(e.target===shOv)shOv.classList.remove('on');});
-document.getElementById('sh-confirm').addEventListener('click',()=>{
-  const n=document.getElementById('sh-num').value.trim().toUpperCase();
-  const r=document.getElementById('sh-route').value.trim().toUpperCase();
-  if(n){S.train=n;S.route=r||S.route;updateTop();shOv.classList.remove('on');toast('Juna: '+n,'ok');}
+shOv.addEventListener('click', e => { if (e.target === shOv) shOv.classList.remove('on'); });
+document.getElementById('sh-confirm').addEventListener('click', () => {
+  const n = document.getElementById('sh-num').value.trim().toUpperCase();
+  const r = document.getElementById('sh-route').value.trim().toUpperCase();
+  if (n) { S.train = n; S.route = r || S.route; updateTop(); shOv.classList.remove('on'); toast('Juna: ' + n, 'ok'); }
 });
 
 // ── PIKA-TOIMINTO ──
-const QOPTS={aikataulu:{lbl:'AIKATAULU',go:'aikataulu'},vaunukartta:{lbl:'VAUNUKARTTA',go:'wagon'},lipunmyynti:{lbl:'LIPUNMYYNTI',go:'lipunmyynti'},liikenne:{lbl:'LIIKENNE',go:'liikenne'},muistio:{lbl:'MUISTIO',go:'muistio'}};
-function updateQuick(){
-  const k=S.g('quick_action')||'aikataulu', a=QOPTS[k]||QOPTS.aikataulu;
-  document.getElementById('bq-lbl').textContent=a.lbl;
-  document.getElementById('btn-bot-quick').onclick=()=>go(a.go);
+const QOPTS = {
+  aikataulu:   { lbl: 'AIKATAULU',   go: 'aikataulu' },
+  vaunukartta: { lbl: 'VAUNUKARTTA', go: 'wagon' },
+  lipunmyynti: { lbl: 'LIPUNMYYNTI', go: 'lipunmyynti' },
+  liikenne:    { lbl: 'LIIKENNE',    go: 'liikenne' },
+  muistio:     { lbl: 'MUISTIO',     go: 'muistio' },
+};
+function updateQuick() {
+  const k = S.g('quick_action') || 'aikataulu';
+  const a = QOPTS[k] || QOPTS.aikataulu;
+  document.getElementById('bq-lbl').textContent = a.lbl;
+  document.getElementById('btn-bot-quick').onclick = () => go(a.go);
 }
 updateQuick();
-document.getElementById('btn-bot-scan').addEventListener('click',()=>go('scanner'));
+
+document.getElementById('btn-bot-scan').addEventListener('click', () => go('scanner'));
 
 // ── TOAST ──
-function toast(msg,type='ok',ms=3000){
-  const c=document.getElementById('toasts'),d=document.createElement('div');
-  d.className='toast '+type; d.textContent=msg; c.appendChild(d);
-  setTimeout(()=>{d.style.opacity='0';d.style.transition='opacity .3s';setTimeout(()=>d.remove(),300);},ms);
+function toast(msg, type = 'ok', ms = 3000) {
+  const c = document.getElementById('toasts');
+  const d = document.createElement('div');
+  d.className = 'toast ' + type;
+  d.textContent = msg;
+  c.appendChild(d);
+  setTimeout(() => { d.style.opacity = '0'; d.style.transition = 'opacity .3s'; setTimeout(() => d.remove(), 300); }, ms);
 }
 
 // ── ÄÄNI ──
-function beep(type){
-  if(S.g('sound')==='false') return;
-  new Audio(type==='ok'?'/sounds/beep.mp3':'/sounds/huom.mp3').play().catch(()=>beepSynth(type));
-}
-function beepSynth(type){
-  try{
-    const ctx=new(window.AudioContext||window.webkitAudioContext)(),o=ctx.createOscillator(),g=ctx.createGain();
-    o.connect(g);g.connect(ctx.destination);
-    if(type==='ok'){o.frequency.value=880;g.gain.setValueAtTime(.3,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.3);o.start();o.stop(ctx.currentTime+.3);}
-    else{o.frequency.value=440;g.gain.setValueAtTime(.4,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.5);o.start();o.stop(ctx.currentTime+.5);const o2=ctx.createOscillator();o2.connect(g);o2.frequency.value=300;o2.start(ctx.currentTime+.2);o2.stop(ctx.currentTime+.5);}
-  }catch(e){}
-}
-function vibe(p){if(S.g('vibrate')!=='false'&&'vibrate'in navigator)navigator.vibrate(p);}
-
-// ══════════════════════════════════════════════════════════════
-//  VR AZTEC BINARY TICKET DECODER  (ei muutettu)
-// ══════════════════════════════════════════════════════════════
-function tryDecodeVRAztec(result){
-  if(!result) return null;
-  let b=null;
-  try{ const raw=result.getRawBytes?result.getRawBytes():null; if(raw&&raw.length>=35) b=Array.from(raw,x=>x&0xff); }catch(e){}
-  if(!b){ const txt=(typeof result==='string')?result:(result.text||''); if(!txt||txt.length<35) return null; b=Array.from(txt,c=>c.charCodeAt(0)&0xff); }
-  if(b[0]!==0xF8||b[1]!==0x02||b[2]!==0x61) return null;
-  const b31=b[31],b33=b[33],b34=b[34];
-  const coach=(b33>>5)&7;
-  const seat=((b33>>4)&1)<<6|(1-((b31>>6)&1))<<5|((b33>>2)&1)<<4|((b33>>1)&1)<<3|(b33&1)<<2|((b34>>7)&1)<<1|((b34>>6)&1);
-  const routeID=(b[20]<<8)|b[21], serviceID=(b[16]<<8)|b[17];
-  return{ticket_id:'VR-AZTEC-'+Date.now(),train:S.train,from:'?',to:'?',coach,seat,ticket_type:'VR',routeID,serviceID,note:'',used_time:null};
+function beep(type) {
+  if (S.g('sound') === 'false') return;
+  const file = type === 'ok' ? '/sounds/beep.mp3' : '/sounds/huom.mp3';
+  const audio = new Audio(file);
+  audio.play().catch(() => { beepSynth(type); });
 }
 
+function beepSynth(type) {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    if (type === 'ok') {
+      o.frequency.value = 880;
+      g.gain.setValueAtTime(.3, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(.001, ctx.currentTime + .3);
+      o.start(); o.stop(ctx.currentTime + .3);
+    } else {
+      o.frequency.value = 440;
+      g.gain.setValueAtTime(.4, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(.001, ctx.currentTime + .5);
+      o.start(); o.stop(ctx.currentTime + .5);
+      const o2 = ctx.createOscillator(); o2.connect(g);
+      o2.frequency.value = 300;
+      o2.start(ctx.currentTime + .2);
+      o2.stop(ctx.currentTime + .5);
+    }
+  } catch(e) {}
+}
+function vibe(p) { if (S.g('vibrate') !== 'false' && 'vibrate' in navigator) navigator.vibrate(p); }
+
 // ══════════════════════════════════════════════════════════════
-//  SKANNERI  (ei muutettu)
+//  VR AZTEC BINARY TICKET DECODER
+//  Ottaa ZXing Result-objektin. Käyttää getRawBytes() oikeiden
+//  binääritavujen saamiseksi — välttää UTF-16-vioittumat.
+//  Palauttaa ticket-objektin tai null jos header ei täsmää.
 // ══════════════════════════════════════════════════════════════
-function startScan(){
-  if(S.scanning) return;
-  const status=document.getElementById('scan-status');
-  status.textContent='Käynnistetään kameraa...';
-  try{
-    const hints=new Map();
-    hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS,[ZXing.BarcodeFormat.QR_CODE,ZXing.BarcodeFormat.AZTEC,ZXing.BarcodeFormat.DATA_MATRIX]);
-    hints.set(ZXing.DecodeHintType.TRY_HARDER,true);
-    S.reader=new ZXing.BrowserMultiFormatReader(hints,{delayBetweenScanAttempts:150,delayBetweenScanSuccess:2000});
-    S.reader.listVideoInputDevices().then(devs=>{
-      if(!devs.length){status.textContent='KAMERAA EI LÖYDY';return;}
-      const back=devs.find(d=>/back|environment|rear/i.test(d.label)), dev=back||devs[devs.length-1];
-      S.reader.decodeFromVideoDevice(dev.deviceId,'scan-video',(result,err)=>{
-        if(result){
-          const now=Date.now();
-          if(result.text===S.lastCode&&now-S.lastTime<2000) return;
-          S.lastCode=result.text; S.lastTime=now;
-          const fmt=result.getBarcodeFormat?ZXing.BarcodeFormat[result.getBarcodeFormat()]||'KOODI':'KOODI';
-          status.textContent=fmt+' luettu ✓';
-          setTimeout(()=>{if(S.scanning)status.textContent='AKTIIVINEN – odottaa koodia';},2000);
-          handleScan(result);
+function tryDecodeVRAztec(result) {
+  if (!result) return null;
+
+  // Hanki tavutaulukko getRawBytes():sta — ainoa luotettava tapa
+  let b = null;
+  try {
+    const raw = result.getRawBytes ? result.getRawBytes() : null;
+    if (raw && raw.length >= 35) {
+      b = Array.from(raw, x => x & 0xff);
+    }
+  } catch(e) {}
+
+  // Fallback merkkijonoon jos rawBytes ei saatavilla
+  if (!b) {
+    const txt = (typeof result === 'string') ? result : (result.text || '');
+    if (!txt || txt.length < 35) return null;
+    b = Array.from(txt, c => c.charCodeAt(0) & 0xff);
+  }
+
+  // Tarkista VR Aztec -otsake: 0xF8 0x02 0x61
+  if (b[0] !== 0xF8 || b[1] !== 0x02 || b[2] !== 0x61) return null;
+
+  const b31 = b[31];
+  const b33 = b[33];
+  const b34 = b[34];
+
+  // Vaunu (3 bittiä)
+  const coach = (b33 >> 5) & 7;
+
+  // Paikka (7 bittiä hajautettu eri tavuihin)
+  const seat =
+    ((b33 >> 4) & 1) << 6 |
+    (1 - ((b31 >> 6) & 1)) << 5 |
+    ((b33 >> 2) & 1) << 4 |
+    ((b33 >> 1) & 1) << 3 |
+    (b33 & 1)        << 2 |
+    ((b34 >> 7) & 1) << 1 |
+    ((b34 >> 6) & 1);
+
+  // Reitti- ja palvelutunnus
+  const routeID   = (b[20] << 8) | b[21];
+  const serviceID = (b[16] << 8) | b[17];
+
+  return {
+    ticket_id:   'VR-AZTEC-' + Date.now(),
+    train:       S.train,
+    from:        '?',
+    to:          '?',
+    coach:       coach,
+    seat:        seat,
+    ticket_type: 'VR',
+    routeID:     routeID,
+    serviceID:   serviceID,
+    note:        '',
+    used_time:   null,
+  };
+}
+
+// ══════════════════════════════════════════════════════════════
+//  SKANNERI — ZXing @0.21.3, tukee QR + Aztec + DataMatrix
+// ══════════════════════════════════════════════════════════════
+function startScan() {
+  if (S.scanning) return;
+  const video  = document.getElementById('scan-video');
+  const status = document.getElementById('scan-status');
+  status.textContent = 'Käynnistetään kameraa...';
+
+  try {
+    const hints = new Map();
+    hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
+      ZXing.BarcodeFormat.QR_CODE,
+      ZXing.BarcodeFormat.AZTEC,
+      ZXing.BarcodeFormat.DATA_MATRIX,
+    ]);
+    hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
+
+    S.reader = new ZXing.BrowserMultiFormatReader(hints, {
+      delayBetweenScanAttempts: 150,
+      delayBetweenScanSuccess: 2000,
+    });
+
+    S.reader.listVideoInputDevices().then(devs => {
+      if (!devs.length) { status.textContent = 'KAMERAA EI LÖYDY'; return; }
+      const back = devs.find(d => /back|environment|rear/i.test(d.label));
+      const dev  = back || devs[devs.length - 1];
+
+      S.reader.decodeFromVideoDevice(
+        dev.deviceId,
+        'scan-video',
+        (result, err) => {
+          if (result) {
+            const now = Date.now();
+            if (result.text === S.lastCode && now - S.lastTime < 2000) return;
+            S.lastCode = result.text;
+            S.lastTime = now;
+
+            const fmt = result.getBarcodeFormat
+              ? ZXing.BarcodeFormat[result.getBarcodeFormat()] || 'KOODI'
+              : 'KOODI';
+            status.textContent = fmt + ' luettu ✓';
+            setTimeout(() => {
+              if (S.scanning) status.textContent = 'AKTIIVINEN – odottaa koodia';
+            }, 2000);
+
+            // Välitetään koko result-objekti, jotta getRawBytes() on käytettävissä
+            handleScan(result);
+          }
         }
-      });
-      S.scanning=true; status.textContent='AKTIIVINEN – odottaa koodia';
-    }).catch(()=>{status.textContent='KAMERALUPA PUUTTUU';});
-  }catch(e){status.textContent='SKANNERI EI KÄYNNISTYNYT';}
+      );
+
+      S.scanning = true;
+      status.textContent = 'AKTIIVINEN – odottaa koodia';
+
+    }).catch(e => {
+      status.textContent = 'KAMERALUPA PUUTTUU';
+      console.warn('ZXing listVideoInputDevices:', e);
+    });
+
+  } catch(e) {
+    status.textContent = 'SKANNERI EI KÄYNNISTYNYT';
+    console.error('ZXing init error:', e);
+  }
 }
-function stopScan(){if(S.reader){try{S.reader.reset();}catch(e){}S.reader=null;}S.scanning=false;}
+
+function stopScan() {
+  if (S.reader) {
+    try { S.reader.reset(); } catch(e) {}
+    S.reader = null;
+  }
+  S.scanning = false;
+}
 
 // ══════════════════════════════════════════════════════════════
-//  SKANNIN KÄSITTELY  (ei muutettu)
+//  SKANNIN KÄSITTELY
+//  1) VR Aztec binääripolku (uusi)
+//  2) JSON QR/Aztec -polku (alkuperäinen, ei muutettu)
 // ══════════════════════════════════════════════════════════════
-async function handleScan(result){
-  const raw=(typeof result==='string')?result:(result.text||'');
-  // 1. VR Aztec binary
-  const aztec=tryDecodeVRAztec(result);
-  if(aztec){
-    const match=aztec.train===S.train;
-    beep(match?'ok':'huom'); vibe(match?[80]:[200,80,200]);
-    sendNotification('VR Aztec -lippu ✓','Vaunu '+aztec.coach+' · Paikka '+aztec.seat);
-    aztec.used=true; aztec.used_time=new Date().toISOString();
-    S.tickets.push(aztec); localStorage.setItem('vr_tickets',JSON.stringify(S.tickets));
-    showPopup(aztec,match?'OK':'HUOM',match,false,null);
-    toast('Aztec OK: Vaunu '+aztec.coach+' · Paikka '+aztec.seat,match?'ok':'warn');
+async function handleScan(result) {
+  // result on ZXing Result-objekti — käytetään .text JSON-polkua varten
+  const raw = (typeof result === 'string') ? result : (result.text || '');
+
+  // ── 1. VR AZTEC BINARY CHECK ──
+  // Tarkistetaan ennen JSON-parsintaa. Jos header täsmää, käsitellään
+  // binäärinen VR-lippu ja poistutaan — JSON-polkua ei ajeta lainkaan.
+  const aztec = tryDecodeVRAztec(result);
+  if (aztec) {
+    const match = aztec.train === S.train;
+
+    beep(match ? 'ok' : 'huom');
+    vibe(match ? [80] : [200, 80, 200]);
+
+    sendNotification(
+      'VR Aztec -lippu ✓',
+      'Vaunu ' + aztec.coach + ' · Paikka ' + aztec.seat +
+      ' · Route ' + aztec.routeID + ' · Service ' + aztec.serviceID
+    );
+
+    aztec.used      = true;
+    aztec.used_time = new Date().toISOString();
+    S.tickets.push(aztec);
+    localStorage.setItem('vr_tickets', JSON.stringify(S.tickets));
+
+    showPopup(aztec, match ? 'OK' : 'HUOM', match, false, null);
+    toast(
+      'Aztec OK: Vaunu ' + aztec.coach + ' · Paikka ' + aztec.seat,
+      match ? 'ok' : 'warn'
+    );
+    return; // ← lopetetaan tähän, ei jatketa JSON-parsintaan
+  }
+
+  // ── 2. JSON QR / VRAPP -POLKU (alkuperäinen, muuttumaton) ──
+  let t;
+  try { t = JSON.parse(raw); } catch(e) {
+    toast('Koodi luettu (ei VR-lippu): ' + raw.substring(0, 50), 'warn', 5000);
+    vibe([100]);
     return;
   }
-  // 2. JSON
-  let t;
-  try{t=JSON.parse(raw);}catch(e){toast('Koodi luettu (ei VR-lippu): '+raw.substring(0,50),'warn',5000);vibe([100]);return;}
-  const isVRAPP=t.app==='VRAPP', isLegacy=t.type==='vr-ticket';
-  if(!isVRAPP&&!isLegacy){toast('Koodi luettu (ei VR-lippu): '+JSON.stringify(t).substring(0,50),'warn',5000);vibe([100]);return;}
-  const ticket={
-    ticket_id:isVRAPP?t.id:t.ticket_id, train:t.train||'?', from:t.from||'?', to:t.to||'?',
-    coach:t.coach||'?', seat:t.seat||'?', ticket_type:isVRAPP?(t.type||'?'):(t.ticket_type||'?'),
-    note:'', used_time:null,
-  };
-  const statusEl=document.getElementById('scan-status');
-  statusEl.textContent='Tarkistetaan Firestoresta...';
-  let alreadyUsed=false,usedTime=null,fsError=null;
-  if(isVRAPP&&db){
-    const r2=await validateTicketFirestore(ticket.ticket_id);
-    alreadyUsed=r2.alreadyUsed; usedTime=r2.usedTime; fsError=r2.firestoreError||null;
-    if(!alreadyUsed&&db){try{await db.collection('tickets').doc(ticket.ticket_id).update({train:ticket.train,coach:ticket.coach,seat:ticket.seat,from:ticket.from,to:ticket.to,type:ticket.ticket_type});}catch(e){}}
-  } else {
-    const ex=S.tickets.find(x=>x.ticket_id===ticket.ticket_id);
-    if(ex&&ex.used){alreadyUsed=true;usedTime=ex.used_time||null;}
+
+  const isVRAPP  = t.app === 'VRAPP';
+  const isLegacy = t.type === 'vr-ticket';
+
+  if (!isVRAPP && !isLegacy) {
+    toast('Koodi luettu (ei VR-lippu): ' + JSON.stringify(t).substring(0, 50), 'warn', 5000);
+    vibe([100]);
+    return;
   }
-  statusEl.textContent='AKTIIVINEN – odottaa koodia';
-  ticket.used=true; ticket.used_time=usedTime||new Date().toISOString();
-  const ex=S.tickets.find(x=>x.ticket_id===ticket.ticket_id);
-  if(ex) Object.assign(ex,ticket); else S.tickets.push(ticket);
-  localStorage.setItem('vr_tickets',JSON.stringify(S.tickets));
-  const match=ticket.train===S.train;
-  if(alreadyUsed){beep('huom');vibe([300,100,300,100,300]);}
-  else{beep(match?'ok':'huom');vibe(match?[80]:[200,80,200]);}
-  sendNotification(alreadyUsed?'Lippu jo käytetty ⚠️':'Lippu tarkastettu ✓',ticket.train+' · Vaunu '+ticket.coach+' · Paikka '+ticket.seat);
-  showPopup(ticket,alreadyUsed?'HUOM':(match?'OK':'HUOM'),match,alreadyUsed,fsError);
-  if(alreadyUsed) toast('LIPPU JO KÄYTETTY','err');
-  else if(fsError) toast('Firestore-virhe — hyväksytty offline: '+ticket.ticket_id,'warn',5000);
-  else toast((match?'OK':'HUOM')+': '+ticket.train+' · '+ticket.coach+'-'+ticket.seat,match?'ok':'warn');
+
+  const ticket = {
+    ticket_id:   isVRAPP ? t.id          : t.ticket_id,
+    train:       t.train  || '?',
+    from:        t.from   || '?',
+    to:          t.to     || '?',
+    coach:       t.coach  || '?',
+    seat:        t.seat   || '?',
+    ticket_type: isVRAPP ? (t.type || '?') : (t.ticket_type || '?'),
+    note:        '',
+    used_time:   null,
+  };
+
+  const statusEl = document.getElementById('scan-status');
+  statusEl.textContent = 'Tarkistetaan Firestoresta...';
+
+  let alreadyUsed = false;
+  let usedTime    = null;
+  let fsError     = null;
+
+  if (isVRAPP && db) {
+    const result = await validateTicketFirestore(ticket.ticket_id);
+    alreadyUsed = result.alreadyUsed;
+    usedTime    = result.usedTime;
+    fsError     = result.firestoreError || null;
+
+    if (!alreadyUsed && db) {
+      try {
+        await db.collection('tickets').doc(ticket.ticket_id).update({
+          train: ticket.train,
+          coach: ticket.coach,
+          seat:  ticket.seat,
+          from:  ticket.from,
+          to:    ticket.to,
+          type:  ticket.ticket_type,
+        });
+      } catch(e) { console.warn('Firestore update:', e.message); }
+    }
+  } else {
+    const ex = S.tickets.find(x => x.ticket_id === ticket.ticket_id);
+    if (ex && ex.used) {
+      alreadyUsed = true;
+      usedTime    = ex.used_time || null;
+    }
+  }
+
+  statusEl.textContent = 'AKTIIVINEN – odottaa koodia';
+
+  ticket.used      = true;
+  ticket.used_time = usedTime || new Date().toISOString();
+  const ex = S.tickets.find(x => x.ticket_id === ticket.ticket_id);
+  if (ex) Object.assign(ex, ticket); else S.tickets.push(ticket);
+  localStorage.setItem('vr_tickets', JSON.stringify(S.tickets));
+
+  const match = ticket.train === S.train;
+
+  if (alreadyUsed) {
+    beep('huom');
+    vibe([300, 100, 300, 100, 300]);
+  } else {
+    beep(match ? 'ok' : 'huom');
+    vibe(match ? [80] : [200, 80, 200]);
+  }
+
+  sendNotification(
+    alreadyUsed ? 'Lippu jo käytetty ⚠️' : 'Lippu tarkastettu ✓',
+    ticket.train + ' · Vaunu ' + ticket.coach + ' · Paikka ' + ticket.seat
+  );
+
+  showPopup(ticket, alreadyUsed ? 'HUOM' : (match ? 'OK' : 'HUOM'), match, alreadyUsed, fsError);
+
+  if (alreadyUsed) {
+    toast('LIPPU JO KÄYTETTY', 'err');
+  } else if (fsError) {
+    toast('Firestore-virhe — hyväksytty offline: ' + ticket.ticket_id, 'warn', 5000);
+  } else {
+    toast(
+      (match ? 'OK' : 'HUOM') + ': ' + ticket.train + ' · ' + ticket.coach + '-' + ticket.seat,
+      match ? 'ok' : 'warn'
+    );
+  }
 }
 
 // ── ILMOITUKSET ──
-function sendNotification(title,body){
-  if(S.g('notifications')==='false'||!('Notification'in window)) return;
-  const send=()=>{try{new Notification(title,{body,icon:'logo.png',badge:'logo.png',tag:'vr-ticket',renotify:false});}catch(e){}};
-  if(Notification.permission==='granted') send();
-  else if(Notification.permission!=='denied') Notification.requestPermission().then(p=>{if(p==='granted')send();});
+function sendNotification(title, body) {
+  if (S.g('notifications') === 'false') return;
+  if (!('Notification' in window)) return;
+  const send = () => {
+    try {
+      new Notification(title, {
+        body, icon: 'logo.png', badge: 'logo.png',
+        tag: 'vr-ticket', renotify: false,
+      });
+    } catch(e) {}
+  };
+  if (Notification.permission === 'granted') {
+    send();
+  } else if (Notification.permission !== 'denied') {
+    Notification.requestPermission().then(p => { if (p === 'granted') send(); });
+  }
 }
 
 // ══════════════════════════════════════════════════════════════
-//  POPUP  (ei muutettu)
+//  POPUP
+//  Muutos: jos ticket.routeID on määritelty (= VR Aztec -lippu),
+//  näytetään Aztec-kentät p-note-alueella tavallisen muistion sijaan.
+//  Kaikki muu popup-logiikka on muuttumaton.
 // ══════════════════════════════════════════════════════════════
-function showPopup(ticket,status,match,alreadyUsed,fsError){
-  document.getElementById('p-train').textContent=ticket.train||'—';
-  const ps=document.getElementById('p-status');
-  ps.textContent=status; ps.className='pop-status '+(status==='OK'?'ok':'huom');
-  const fr=(ticket.from||'?').substring(0,3).toUpperCase(), to=(ticket.to||'?').substring(0,3).toUpperCase();
-  document.getElementById('p-route').textContent=fr+'-'+to;
-  document.getElementById('p-cs').textContent=(ticket.coach||'?')+'-'+(ticket.seat||'?');
-  document.getElementById('p-type').textContent=ticket.ticket_type||'—';
-  const warn=document.getElementById('p-warn'), note=document.getElementById('p-note');
-  warn.classList.remove('on'); note.classList.remove('on');
-  if(alreadyUsed){
-    const t=ticket.used_time?new Date(ticket.used_time).toLocaleTimeString('fi-FI',{hour:'2-digit',minute:'2-digit'}):'?';
-    warn.textContent='⚠️ JO TARKASTETTU kello '+t; warn.classList.add('on');
-  } else if(fsError){
-    warn.textContent='⚠️ Offline — Firestore ei saatavilla'; warn.classList.add('on');
-  } else if(!match){
-    warn.textContent='HUOM: Lippu junalle '+ticket.train+' – väärä juna!'; warn.classList.add('on');
+function showPopup(ticket, status, match, alreadyUsed, fsError) {
+  document.getElementById('p-train').textContent = ticket.train || '—';
+  const ps = document.getElementById('p-status');
+  ps.textContent = status;
+  ps.className   = 'pop-status ' + (status === 'OK' ? 'ok' : 'huom');
+
+  const fr = (ticket.from || '?').substring(0, 3).toUpperCase();
+  const to = (ticket.to   || '?').substring(0, 3).toUpperCase();
+  document.getElementById('p-route').textContent = fr + '-' + to;
+  document.getElementById('p-cs').textContent    = (ticket.coach || '?') + '-' + (ticket.seat || '?');
+  document.getElementById('p-type').textContent  = ticket.ticket_type || '—';
+
+  const warn = document.getElementById('p-warn');
+  const note = document.getElementById('p-note');
+  warn.classList.remove('on');
+  note.classList.remove('on');
+
+  // Varoituskenttä (muuttumaton)
+  if (alreadyUsed) {
+    const t = ticket.used_time
+      ? new Date(ticket.used_time).toLocaleTimeString('fi-FI', {hour:'2-digit', minute:'2-digit'})
+      : '?';
+    warn.textContent = '⚠️ JO TARKASTETTU kello ' + t;
+    warn.classList.add('on');
+  } else if (fsError) {
+    warn.textContent = '⚠️ Offline — Firestore ei saatavilla';
+    warn.classList.add('on');
+  } else if (!match) {
+    warn.textContent = 'HUOM: Lippu junalle ' + ticket.train + ' – väärä juna!';
+    warn.classList.add('on');
   }
-  if(ticket.routeID!==undefined){
-    note.innerHTML='Vaunu: '+ticket.coach+'<br>Paikka: '+ticket.seat+'<br>routeID: '+ticket.routeID+'<br>serviceID: '+ticket.serviceID;
+
+  // ── Muistiokenttä: Aztec-kentät tai tavallinen muistio ──
+  if (ticket.routeID !== undefined) {
+    // VR Aztec -lippu: näytetään puretut binäärikentät
+    note.innerHTML =
+      'Vaunu: '     + ticket.coach     + '<br>' +
+      'Paikka: '    + ticket.seat      + '<br>' +
+      'routeID: '   + ticket.routeID   + '<br>' +
+      'serviceID: ' + ticket.serviceID;
     note.classList.add('on');
-  } else if(ticket.note){
-    note.textContent='📌 '+ticket.note; note.classList.add('on');
+  } else if (ticket.note) {
+    // Tavallinen JSON-lippu muistiolla
+    note.textContent = '📌 ' + ticket.note;
+    note.classList.add('on');
   }
-  const dur=parseInt(S.g('popup_duration')||'7')*1000;
-  const fill=document.getElementById('p-timer');
-  fill.style.transition='none'; fill.style.width='100%';
-  requestAnimationFrame(()=>requestAnimationFrame(()=>{fill.style.transition=`width ${dur}ms linear`;fill.style.width='0%';}));
+
+  // Ajastin
+  const dur  = parseInt(S.g('popup_duration') || '7') * 1000;
+  const fill = document.getElementById('p-timer');
+  fill.style.transition = 'none';
+  fill.style.width      = '100%';
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    fill.style.transition = `width ${dur}ms linear`;
+    fill.style.width      = '0%';
+  }));
+
   document.getElementById('popup-ov').classList.add('on');
-  if(S.popTimer) clearTimeout(S.popTimer);
-  S.popTimer=setTimeout(closePopup,dur);
-  document.getElementById('p-note-btn').onclick=()=>{
-    const n=prompt('Muistio lipulle:',ticket.note||'');
-    if(n!==null){ticket.note=n;localStorage.setItem('vr_tickets',JSON.stringify(S.tickets));if(n){note.textContent='📌 '+n;note.classList.add('on');}toast('Muistio tallennettu','ok');}
+  if (S.popTimer) clearTimeout(S.popTimer);
+  S.popTimer = setTimeout(closePopup, dur);
+
+  document.getElementById('p-note-btn').onclick = () => {
+    const n = prompt('Muistio lipulle:', ticket.note || '');
+    if (n !== null) {
+      ticket.note = n;
+      localStorage.setItem('vr_tickets', JSON.stringify(S.tickets));
+      if (n) { note.textContent = '📌 ' + n; note.classList.add('on'); }
+      toast('Muistio tallennettu', 'ok');
+    }
   };
 }
-function closePopup(){document.getElementById('popup-ov').classList.remove('on');if(S.popTimer)clearTimeout(S.popTimer);}
-document.getElementById('popup-ov').addEventListener('click',e=>{if(e.target===document.getElementById('popup-ov'))closePopup();});
-document.getElementById('p-close-btn').addEventListener('click',closePopup);
 
-// ── VAUNUKARTTA ──
-function loadWagon(){
-  const frame=document.getElementById('wagon-frame');
-  const url='https://venaarauhassa.fi/train/'+new Date().toLocaleDateString('sv-SE')+'/'+S.train.replace(/\D/g,'');
-  if(frame.getAttribute('data-loaded-url')!==url){
-    frame.setAttribute('data-loaded-url',url); frame.src=url;
+function closePopup() {
+  document.getElementById('popup-ov').classList.remove('on');
+  if (S.popTimer) clearTimeout(S.popTimer);
+}
+document.getElementById('popup-ov').addEventListener('click', e => {
+  if (e.target === document.getElementById('popup-ov')) closePopup();
+});
+document.getElementById('p-close-btn').addEventListener('click', closePopup);
+
+// ── VAUNUKARTTA (iframe) ──
+function loadWagon() {
+  const frame = document.getElementById('wagon-frame');
+  const num   = S.train.replace(/\D/g, '');
+  const date  = new Date().toLocaleDateString('sv-SE');
+  const url   = 'https://venaarauhassa.fi/train/' + date + '/' + num;
+  const prev  = frame.getAttribute('data-loaded-url') || '';
+  if (prev !== url) {
+    frame.setAttribute('data-loaded-url', url);
+    frame.src = url;
     document.getElementById('iframe-fallback').classList.remove('show');
-    frame.onload=()=>document.getElementById('iframe-fallback').classList.remove('show');
-    frame.onerror=()=>document.getElementById('iframe-fallback').classList.add('show');
+    frame.onload  = () => document.getElementById('iframe-fallback').classList.remove('show');
+    frame.onerror = () => document.getElementById('iframe-fallback').classList.add('show');
   }
 }
 
-// ── AIKATAULU (oma juna) ──
-async function loadTimetable(){
-  const el=document.getElementById('tt-content');
-  el.innerHTML='<div class="loader"><div class="spin"></div><span>Ladataan '+S.train+'...</span></div>';
-  try{
-    const num=S.train.replace(/\D/g,''), date=new Date().toISOString().split('T')[0];
-    const res=await fetch(`https://rata.digitraffic.fi/api/v1/trains/${date}/${num}`);
-    const data=await res.json();
-    if(!data||!data.length){el.innerHTML='<div class="empty"><div class="empty-ico">🚆</div><div class="empty-t">Junaa ei löydy</div><div class="empty-s">Tarkista junanumero</div></div>';return;}
-    const train=data[0], rows=(train.timeTableRows||[]).filter(r=>r.commercialStop);
-    const stops=[]; const seen=new Map();
-    for(const r of rows){
-      if(!seen.has(r.stationShortCode)){seen.set(r.stationShortCode,{station:r.stationShortCode,dep:null,arr:null});stops.push(seen.get(r.stationShortCode));}
-      const s=seen.get(r.stationShortCode);
-      if(r.type==='DEPARTURE') s.dep=r; if(r.type==='ARRIVAL') s.arr=r;
-    }
-    const now=new Date(); let curIdx=stops.findIndex(s=>new Date((s.dep||s.arr).scheduledTime)>now); if(curIdx===-1) curIdx=stops.length;
-    let html=`<div style="display:flex;justify-content:space-between;background:#f5f5ee;border:2px solid #333;padding:10px 12px;margin-bottom:10px">
-      <div><div style="font-size:11px;font-weight:700;color:#555;text-transform:uppercase">JUNA</div><div style="font-size:20px;font-weight:900;font-family:monospace">${train.trainType} ${train.trainNumber}</div></div>
-      <div style="text-align:right"><div style="font-size:11px;font-weight:700;color:#555;text-transform:uppercase">PYSÄHDYKSIÄ</div><div style="font-size:20px;font-weight:900;color:#00a651">${stops.length}</div></div></div>`;
-    if(train.cancelled) html+=`<div style="background:#ffe8e8;border:2px solid #e8002d;padding:8px 12px;font-size:13px;font-weight:900;color:#e8002d;margin-bottom:8px">🚫 PERUUTETTU</div>`;
-    html+='<div class="tt-list">';
-    stops.forEach((s,i)=>{
-      const past=i<curIdx-1,cur=i===curIdx-1, row=s.dep||s.arr;
-      const time=new Date(row.scheduledTime).toLocaleTimeString('fi-FI',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/Helsinki'});
-      const delay=row.differenceInMinutes||0;
-      html+=`<div class="tt-row"><div class="tt-time-col"><span class="tt-sch" style="${past?'color:#aaa':''}">${time}</span>${delay>0?`<span class="tt-dly">+${delay}min</span>`:''}</div>
-        <div class="tt-dot${cur?' cur':past?' past':''}"></div>
-        <div><div class="tt-stn${cur?' cur':past?' past':''}">${STA[s.station]||s.station}${cur?' ◄ NYT':''}</div>${row.commercialTrack?`<div class="tt-track">Raide ${row.commercialTrack}</div>`:''}${row.cancelled?`<div class="tt-cancel">PERUUTETTU</div>`:''}</div></div>`;
-    });
-    html+=`</div><div style="text-align:center;font-size:10px;color:#777;font-weight:700;margin-top:10px;font-family:monospace">rata.digitraffic.fi · ${new Date().toLocaleTimeString('fi-FI')}</div>`;
-    el.innerHTML=html;
-  }catch(e){el.innerHTML=`<div class="empty"><div class="empty-ico">⚠️</div><div class="empty-t">YHTEYSVIRHE</div><div class="empty-s">${e.message}</div></div>`;}
-}
-
-// ══════════════════════════════════════════════════════════════
-//  FEATURE 1 — LIIKENNETIEDOTTEET
-// ══════════════════════════════════════════════════════════════
-async function loadBulletins(){
-  const el=document.getElementById('bull-content');
-  el.innerHTML='<div class="loader"><div class="spin"></div><span>Ladataan tiedotteita...</span></div>';
-  try{
-    // Fintraffic traffic-restrictions endpoint
-    const res=await fetch('https://rata.digitraffic.fi/api/v1/traffic-restrictions');
-    const data=await res.json();
-    const items=Array.isArray(data)?data:(data.restrictions||data.timetableRows||[]);
-    if(!items.length){
-      el.innerHTML='<div class="empty"><div class="empty-ico">✅</div><div class="empty-t">EI TIEDOTTEITA</div><div class="empty-s">Kaikki liikennöi normaalisti</div></div>';
+// ── AIKATAULU ──
+async function loadTimetable() {
+  const el = document.getElementById('tt-content');
+  el.innerHTML = '<div class="loader"><div class="spin"></div><span>Ladataan ' + S.train + '...</span></div>';
+  try {
+    const num  = S.train.replace(/\D/g, '');
+    const date = new Date().toISOString().split('T')[0];
+    const res  = await fetch(`https://rata.digitraffic.fi/api/v1/trains/${date}/${num}`);
+    const data = await res.json();
+    if (!data || !data.length) {
+      el.innerHTML = '<div class="empty"><div class="empty-ico">🚆</div><div class="empty-t">Junaa ei löydy</div><div class="empty-s">Tarkista junanumero</div></div>';
       return;
     }
-    const sorted=items.slice().sort((a,b)=>{
-      const ta=a.startDateTime||a.startDate||a.validFrom||'';
-      const tb=b.startDateTime||b.startDate||b.validFrom||'';
-      return tb.localeCompare(ta);
-    });
-    let html=`<div style="display:flex;justify-content:space-between;background:#f5f5ee;border:2px solid #333;padding:8px 12px;margin-bottom:10px">
-      <div style="font-size:11px;font-weight:700;color:#555;text-transform:uppercase">TIEDOTTEITA</div>
-      <div style="font-size:16px;font-weight:900;color:#e8002d">${sorted.length}</div></div>
-    <div class="bull-list">`;
-    sorted.slice(0,50).forEach(item=>{
-      const title=item.title||item.type||item.restrictionType||item.cause||'Häiriö';
-      const desc=item.description||item.additionalInformation||item.reason||'';
-      const from=item.startDateTime||item.startDate||item.validFrom||'';
-      const to=item.endDateTime||item.endDate||item.validTo||'';
-      const fromStr=from?new Date(from).toLocaleString('fi-FI',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'';
-      const toStr=to?new Date(to).toLocaleTimeString('fi-FI',{hour:'2-digit',minute:'2-digit'}):'';
-      const timeStr=fromStr?(toStr?fromStr+' – '+toStr:fromStr):'';
-      const isErr=/peruutet|cancel|häiriö|viivästy|delay|fault/i.test(title+desc);
-      const isOk=/päätty|normaali|normal|resolved/i.test(title+desc);
-      html+=`<div class="bull-item ${isOk?'ok':isErr?'err':''}">
-        <div class="bull-title">⚠ ${title}</div>
-        ${desc?`<div class="bull-desc">${desc}</div>`:''}
-        ${timeStr?`<div class="bull-time">🕐 ${timeStr}</div>`:''}
-      </div>`;
-    });
-    html+=`</div><div style="text-align:center;font-size:10px;color:#777;font-weight:700;margin-top:10px;font-family:monospace">rata.digitraffic.fi · ${new Date().toLocaleTimeString('fi-FI')}</div>`;
-    el.innerHTML=html;
-  }catch(e){
-    el.innerHTML=`<div class="empty"><div class="empty-ico">⚠️</div><div class="empty-t">TIEDOTTEITA EI SAATAVILLA</div><div class="empty-s">${e.message}</div></div>`;
-  }
-}
-
-// ══════════════════════════════════════════════════════════════
-//  FEATURE 2 — AIKATAULUT: live trains
-// ══════════════════════════════════════════════════════════════
-async function loadLiveTrains(){
-  const el=document.getElementById('aikataulut-content');
-  el.innerHTML='<div class="loader"><div class="spin"></div><span>Ladataan junia...</span></div>';
-  try{
-    const res=await fetch('https://rata.digitraffic.fi/api/v1/live-trains?departed_trains=0&arriving_trains=0&departing_trains=50&include_nonstopping=false');
-    const data=await res.json();
-    if(!Array.isArray(data)||!data.length){
-      el.innerHTML='<div class="empty"><div class="empty-ico">🚆</div><div class="empty-t">EI JUNIA</div><div class="empty-s">Kokeile myöhemmin</div></div>';
-      return;
+    const train = data[0];
+    const rows  = (train.timeTableRows || []).filter(r => r.commercialStop);
+    const stops = []; const seen = new Map();
+    for (const r of rows) {
+      if (!seen.has(r.stationShortCode)) {
+        seen.set(r.stationShortCode, { station: r.stationShortCode, dep: null, arr: null });
+        stops.push(seen.get(r.stationShortCode));
+      }
+      const s = seen.get(r.stationShortCode);
+      if (r.type === 'DEPARTURE') s.dep = r;
+      if (r.type === 'ARRIVAL')   s.arr = r;
     }
-    const junat=data.filter(t=>['IC','S','P','R','AE'].includes(t.trainType)&&!t.cancelled).slice(0,40);
-    let html=`<div style="display:flex;justify-content:space-between;background:#f5f5ee;border:2px solid #333;padding:8px 12px;margin-bottom:10px">
-      <div style="font-size:11px;font-weight:700;color:#555;text-transform:uppercase">JUNIA LISTALLA</div>
-      <div style="font-size:16px;font-weight:900;color:#00a651">${junat.length}</div></div>
-    <div class="train-list">`;
-    junat.forEach(train=>{
-      const rows=(train.timeTableRows||[]).filter(r=>r.commercialStop);
-      if(!rows.length) return;
-      const first=rows[0], last=rows[rows.length-1];
-      const dep=STA[first.stationShortCode]||first.stationShortCode;
-      const arr=STA[last.stationShortCode]||last.stationShortCode;
-      const now=new Date();
-      const nextRow=rows.find(r=>new Date(r.scheduledTime)>now);
-      const delay=nextRow?(nextRow.differenceInMinutes||0):0;
-      const depTime=new Date(first.scheduledTime).toLocaleTimeString('fi-FI',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/Helsinki'});
-      const badgeCls=delay>5?'dly':'ok';
-      const badgeTxt=delay>5?'+'+delay+'min':(train.runningCurrently?'LIIKKEESSÄ':'AJOISSA');
-      html+=`<div class="train-item" onclick="openTrainDetail(${train.trainNumber},'${train.trainType}')">
-        <div class="train-num">${train.trainType}${train.trainNumber}</div>
-        <div class="train-dest">
-          <div class="train-dest-main">${dep} → ${arr}</div>
-          <div class="train-dest-sub">Lähtö ${depTime}</div>
+    const now = new Date();
+    let curIdx = stops.findIndex(s => new Date((s.dep || s.arr).scheduledTime) > now);
+    if (curIdx === -1) curIdx = stops.length;
+
+    let html = `<div style="display:flex;justify-content:space-between;background:#f5f5ee;border:2px solid #333;padding:10px 12px;margin-bottom:10px">
+      <div><div style="font-size:11px;font-weight:700;color:#555;text-transform:uppercase">JUNA</div>
+      <div style="font-size:20px;font-weight:900;font-family:monospace">${train.trainType} ${train.trainNumber}</div></div>
+      <div style="text-align:right"><div style="font-size:11px;font-weight:700;color:#555;text-transform:uppercase">PYSÄHDYKSIÄ</div>
+      <div style="font-size:20px;font-weight:900;color:#00a651">${stops.length}</div></div>
+    </div>`;
+    if (train.cancelled) html += `<div style="background:#ffe8e8;border:2px solid #e8002d;padding:8px 12px;font-size:13px;font-weight:900;color:#e8002d;margin-bottom:8px">🚫 PERUUTETTU</div>`;
+    html += '<div class="tt-list">';
+    stops.forEach((s, i) => {
+      const past = i < curIdx - 1, cur = i === curIdx - 1;
+      const row  = s.dep || s.arr;
+      const time = new Date(row.scheduledTime).toLocaleTimeString('fi-FI', {hour:'2-digit', minute:'2-digit', timeZone:'Europe/Helsinki'});
+      const delay = row.differenceInMinutes || 0;
+      html += `<div class="tt-row">
+        <div class="tt-time-col">
+          <span class="tt-sch" style="${past?'color:#aaa':''}">${time}</span>
+          ${delay > 0 ? `<span class="tt-dly">+${delay}min</span>` : ''}
         </div>
-        <div class="train-badge ${badgeCls}">${badgeTxt}</div>
+        <div class="tt-dot${cur?' cur':past?' past':''}"></div>
+        <div>
+          <div class="tt-stn${cur?' cur':past?' past':''}">${STA[s.station] || s.station}${cur?' ◄ NYT':''}</div>
+          ${row.commercialTrack ? `<div class="tt-track">Raide ${row.commercialTrack}</div>` : ''}
+          ${row.cancelled ? `<div class="tt-cancel">PERUUTETTU</div>` : ''}
+        </div>
       </div>`;
     });
-    html+=`</div><div style="text-align:center;font-size:10px;color:#777;font-weight:700;margin-top:10px;font-family:monospace">rata.digitraffic.fi · ${new Date().toLocaleTimeString('fi-FI')}</div>`;
-    el.innerHTML=html;
-  }catch(e){
-    el.innerHTML=`<div class="empty"><div class="empty-ico">⚠️</div><div class="empty-t">YHTEYSVIRHE</div><div class="empty-s">${e.message}</div></div>`;
+    html += `</div><div style="text-align:center;font-size:10px;color:#777;font-weight:700;margin-top:10px;font-family:monospace">rata.digitraffic.fi · ${new Date().toLocaleTimeString('fi-FI')}</div>`;
+    el.innerHTML = html;
+  } catch(e) {
+    el.innerHTML = `<div class="empty"><div class="empty-ico">⚠️</div><div class="empty-t">YHTEYSVIRHE</div><div class="empty-s">${e.message}</div></div>`;
   }
 }
 
-window.openTrainDetail=async function(num,type){
-  const ov=document.getElementById('train-detail-ov');
-  document.getElementById('td-title').textContent=type+num;
-  document.getElementById('td-inner').innerHTML='<div class="loader"><div class="spin"></div><span>Ladataan...</span></div>';
-  ov.classList.add('on');
-  try{
-    const date=new Date().toISOString().split('T')[0];
-    const res=await fetch(`https://rata.digitraffic.fi/api/v1/trains/${date}/${num}`);
-    const data=await res.json();
-    if(!data||!data.length){document.getElementById('td-inner').innerHTML='<div class="empty"><div class="empty-ico">🚆</div><div class="empty-t">EI TIETOJA</div></div>';return;}
-    const train=data[0], rows=(train.timeTableRows||[]).filter(r=>r.commercialStop);
-    const stops=[]; const seen=new Map();
-    for(const r of rows){
-      if(!seen.has(r.stationShortCode)){seen.set(r.stationShortCode,{station:r.stationShortCode,dep:null,arr:null});stops.push(seen.get(r.stationShortCode));}
-      const s=seen.get(r.stationShortCode);
-      if(r.type==='DEPARTURE') s.dep=r; if(r.type==='ARRIVAL') s.arr=r;
-    }
-    const now=new Date(); let curIdx=stops.findIndex(s=>new Date((s.dep||s.arr).scheduledTime)>now); if(curIdx===-1) curIdx=stops.length;
-    let html='<div class="tt-list">';
-    stops.forEach((s,i)=>{
-      const past=i<curIdx-1,cur=i===curIdx-1,row=s.dep||s.arr;
-      const time=new Date(row.scheduledTime).toLocaleTimeString('fi-FI',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/Helsinki'});
-      const delay=row.differenceInMinutes||0;
-      html+=`<div class="tt-row"><div class="tt-time-col"><span class="tt-sch" style="${past?'color:#aaa':''}">${time}</span>${delay>0?`<span class="tt-dly">+${delay}min</span>`:''}</div>
-        <div class="tt-dot${cur?' cur':past?' past':''}"></div>
-        <div><div class="tt-stn${cur?' cur':past?' past':''}">${STA[s.station]||s.station}${cur?' ◄ NYT':''}</div>${row.commercialTrack?`<div class="tt-track">Raide ${row.commercialTrack}</div>`:''}</div></div>`;
+// ── LIPUNMYYNTI ──
+document.getElementById('btn-gen').addEventListener('click', async () => {
+  const train = document.getElementById('s-train').value.trim().toUpperCase() || S.train;
+  const from  = document.getElementById('s-from').value.trim();
+  const to    = document.getElementById('s-to').value.trim();
+  const coach = document.getElementById('s-coach').value;
+  const seat  = document.getElementById('s-seat').value;
+  const type  = document.getElementById('s-type').value;
+  if (!from || !to || !coach || !seat) { toast('Täytä kaikki kentät', 'err'); return; }
+  const id   = 'VR-' + Math.floor(100000 + Math.random() * 900000);
+  const data = { type:'vr-ticket', ticket_id:id, train, from, to, coach:+coach, seat:+seat, ticket_type:type };
+  const qrStr = JSON.stringify(data);
+  try {
+    await QRCode.toCanvas(document.getElementById('qr-canvas'), qrStr, {
+      width:220, margin:2, color:{dark:'#000',light:'#fff'}, errorCorrectionLevel:'L'
     });
-    html+='</div>';
-    document.getElementById('td-inner').innerHTML=html;
-  }catch(e){document.getElementById('td-inner').innerHTML=`<div class="empty"><div class="empty-ico">⚠️</div><div class="empty-t">YHTEYSVIRHE</div></div>`;}
-};
-document.getElementById('td-close-btn').addEventListener('click',()=>document.getElementById('train-detail-ov').classList.remove('on'));
-document.getElementById('train-detail-ov').addEventListener('click',e=>{if(e.target===document.getElementById('train-detail-ov'))document.getElementById('train-detail-ov').classList.remove('on');});
-
-// ══════════════════════════════════════════════════════════════
-//  FEATURE 3 & 4 — LIPUNMYYNTI: Aztec-lipun generointi + preview
-//
-//  Payload on VRAPP-yhteensopiva JSON-objekti.
-//  Olemassa oleva handleScan() → JSON-polku lukee sen suoraan.
-//  serviceID ja routeID tallennetaan JSON-kenttiin joten
-//  popup näyttää ne myös VRAPP-lippuna.
-// ══════════════════════════════════════════════════════════════
-document.getElementById('btn-gen').addEventListener('click',async()=>{
-  const train=(document.getElementById('s-train').value.trim().toUpperCase())||S.train;
-  const from=document.getElementById('s-from').value.trim();
-  const to=document.getElementById('s-to').value.trim();
-  const coach=parseInt(document.getElementById('s-coach').value)||1;
-  const seat=parseInt(document.getElementById('s-seat').value)||1;
-  const type=document.getElementById('s-type').value;
-  const serviceID=parseInt(document.getElementById('s-sid').value)||45650;
-  const routeID=parseInt(document.getElementById('s-rid').value)||21604;
-  if(!from||!to){toast('Täytä lähtö- ja määränpää','err');return;}
-  const ticketId='VRAPP-'+Math.floor(100000+Math.random()*900000);
-  // VRAPP JSON payload — skanneri lukee JSON-polulla (handleScan → isVRAPP)
-  const payload=JSON.stringify({
-    app:'VRAPP', id:ticketId, train, from, to,
-    coach, seat, type, serviceID, routeID,
-  });
-  // Generoi Aztec koodi bwip-js:llä
-  try{
-    bwipjs.toCanvas(document.getElementById('aztec-canvas'),{
-      bcid:'azteccode', text:payload, scale:3, eclevel:23,
-    });
-  }catch(e){toast('Aztec-koodi epäonnistui: '+e.message,'err');return;}
-  // Täytä lipun preview
-  document.getElementById('tp-train-lbl').textContent=train;
-  document.getElementById('tp-coach').textContent=coach;
-  document.getElementById('tp-seat').textContent=seat;
-  document.getElementById('tp-type').textContent=type;
-  document.getElementById('tp-from').textContent=from.substring(0,3).toUpperCase();
-  document.getElementById('tp-to').textContent=to.substring(0,3).toUpperCase();
-  document.getElementById('tp-id').textContent=ticketId+' · svc '+serviceID+' · rte '+routeID;
-  document.getElementById('ticket-preview').classList.add('on');
-  toast('Lippu luotu: '+ticketId,'ok');
+    document.getElementById('qr-id').textContent  = id;
+    document.getElementById('qr-det').textContent = `${train} · Vaunu ${coach} · Paikka ${seat} · ${from}→${to} · ${type}`;
+    document.getElementById('qr-box').classList.add('on');
+    toast('Lippu luotu: ' + id, 'ok');
+  } catch(e) { toast('QR-koodi epäonnistui', 'err'); }
 });
 
 // ── MATKALIPUT ──
-function renderTickets(){
-  const el=document.getElementById('tickets-content'), tix=S.tickets;
-  if(!tix.length){el.innerHTML='<div class="empty"><div class="empty-ico">🎫</div><div class="empty-t">EI SKANNATTUJA LIPPUJA</div><div class="empty-s">Skannaa lippu nähdäksesi sen täällä</div></div>';return;}
-  const cur=tix.filter(t=>t.train===S.train).length, warn=tix.filter(t=>t.train!==S.train).length;
-  let html=`<div class="stats-bar">
+function renderTickets() {
+  const el  = document.getElementById('tickets-content');
+  const tix = S.tickets;
+  if (!tix.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-ico">🎫</div><div class="empty-t">EI SKANNATTUJA LIPPUJA</div><div class="empty-s">Skannaa lippu nähdäksesi sen täällä</div></div>';
+    return;
+  }
+  const cur  = tix.filter(t => t.train === S.train).length;
+  const warn = tix.filter(t => t.train !== S.train).length;
+  let html = `<div class="stats-bar">
     <div class="stat" style="border:2px solid #333"><div class="stat-n">${tix.length}</div><div class="stat-l">YHTEENSÄ</div></div>
     <div class="stat" style="border:2px solid #00a651"><div class="stat-n" style="color:#00a651">${cur}</div><div class="stat-l">${S.train}</div></div>
     <div class="stat" style="border:2px solid #e8002d"><div class="stat-n" style="color:#e8002d">${warn}</div><div class="stat-l">HUOM</div></div>
   </div><div class="tlist">`;
-  tix.slice().reverse().forEach((t,i)=>{
-    const ok=t.train===S.train;
-    const fr=(t.from||'?').substring(0,3).toUpperCase(), tod=(t.to||'?').substring(0,3).toUpperCase();
-    const time=t.used_time?new Date(t.used_time).toLocaleTimeString('fi-FI',{hour:'2-digit',minute:'2-digit'}):'—';
-    const idx=tix.length-1-i;
-    html+=`<div class="titem" onclick="openTix(${idx})"><div class="tdot ${ok?'ok':'huom'}"></div>
-      <div class="tinfo"><div class="tmain">${t.train} · ${t.coach}-${t.seat} · ${t.ticket_type}</div>
-      <div class="tsub">${fr} → ${tod} · ${ok?'OK':'HUOM'}</div>${t.note?`<div class="tnote">📌 ${t.note}</div>`:''}</div>
-      <div class="ttime">${time}</div></div>`;
+  tix.slice().reverse().forEach((t, i) => {
+    const ok   = t.train === S.train;
+    const fr   = (t.from || '?').substring(0, 3).toUpperCase();
+    const to   = (t.to   || '?').substring(0, 3).toUpperCase();
+    const time = t.used_time ? new Date(t.used_time).toLocaleTimeString('fi-FI', {hour:'2-digit',minute:'2-digit'}) : '—';
+    const idx  = tix.length - 1 - i;
+    html += `<div class="titem" onclick="openTix(${idx})">
+      <div class="tdot ${ok?'ok':'huom'}"></div>
+      <div class="tinfo">
+        <div class="tmain">${t.train} · ${t.coach}-${t.seat} · ${t.ticket_type}</div>
+        <div class="tsub">${fr} → ${to} · ${ok?'OK':'HUOM'}</div>
+        ${t.note ? `<div class="tnote">📌 ${t.note}</div>` : ''}
+      </div>
+      <div class="ttime">${time}</div>
+    </div>`;
   });
-  html+=`</div><div style="text-align:center;margin-top:14px"><button onclick="clearTix()" style="background:#f5f5ee;border:2px solid #e8002d;color:#e8002d;font-size:13px;font-weight:900;padding:8px 16px;cursor:pointer;font-family:Arial,sans-serif;text-transform:uppercase">TYHJENNÄ LISTA</button></div>`;
-  el.innerHTML=html;
+  html += `</div><div style="text-align:center;margin-top:14px">
+    <button onclick="clearTix()" style="background:#f5f5ee;border:2px solid #e8002d;color:#e8002d;font-size:13px;font-weight:900;padding:8px 16px;cursor:pointer;font-family:Arial,sans-serif;text-transform:uppercase">TYHJENNÄ LISTA</button>
+  </div>`;
+  el.innerHTML = html;
 }
-window.openTix=function(idx){const t=S.tickets[idx];if(!t)return;showPopup(t,t.train===S.train?'OK':'HUOM',t.train===S.train,t.used);};
-window.clearTix=function(){if(!confirm('Poistetaanko kaikki liput?'))return;S.tickets=[];localStorage.setItem('vr_tickets','[]');renderTickets();};
+window.openTix = function(idx) {
+  const t = S.tickets[idx]; if (!t) return;
+  showPopup(t, t.train === S.train ? 'OK' : 'HUOM', t.train === S.train, t.used);
+};
+window.clearTix = function() {
+  if (!confirm('Poistetaanko kaikki liput?')) return;
+  S.tickets = []; localStorage.setItem('vr_tickets', '[]'); renderTickets();
+};
 
 // ── MUISTIO ──
-document.getElementById('btn-save-memo').addEventListener('click',()=>{localStorage.setItem('vr_memo',document.getElementById('memo-area').value);toast('Muistio tallennettu','ok');});
-document.getElementById('memo-area').addEventListener('input',e=>localStorage.setItem('vr_memo',e.target.value));
+document.getElementById('btn-save-memo').addEventListener('click', () => {
+  localStorage.setItem('vr_memo', document.getElementById('memo-area').value);
+  toast('Muistio tallennettu', 'ok');
+});
+document.getElementById('memo-area').addEventListener('input', e =>
+  localStorage.setItem('vr_memo', e.target.value)
+);
 
-// ── LIIKENNE ──
-let mapInterval=null;
-async function initMap(){
-  if(typeof L==='undefined'){document.getElementById('tcards').innerHTML='<div class="tcard err"><div class="tcard-t">KARTTA EI LATAUTUNUT</div></div>';return;}
-  if(!S.mapInst){S.mapInst=L.map('mapbox',{center:[64.5,26],zoom:5,zoomControl:true,attributionControl:false});L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{subdomains:'abc',maxZoom:16}).addTo(S.mapInst);}
-  await fetchLocs(); await fetchTrafficCards();
-  if(mapInterval) clearInterval(mapInterval);
-  mapInterval=setInterval(fetchLocs,15000);
+// ── LIIKENNE / KARTTA ──
+let mapInterval = null;
+async function initMap() {
+  if (typeof L === 'undefined') {
+    document.getElementById('tcards').innerHTML = '<div class="tcard err"><div class="tcard-t">KARTTA EI LATAUTUNUT</div><div class="tcard-d">Tarkista internetyhteys</div></div>';
+    return;
+  }
+  if (!S.mapInst) {
+    S.mapInst = L.map('mapbox', {center:[64.5,26], zoom:5, zoomControl:true, attributionControl:false});
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {subdomains:'abc', maxZoom:16}).addTo(S.mapInst);
+  }
+  await fetchLocs();
+  await fetchTrafficCards();
+  if (mapInterval) clearInterval(mapInterval);
+  mapInterval = setInterval(fetchLocs, 15000);
 }
-async function fetchLocs(){
-  if(!S.mapInst) return;
-  try{
-    const trains=await(await fetch('https://rata.digitraffic.fi/api/v1/train-locations/latest')).json();
-    if(!Array.isArray(trains)) return;
-    const active=new Set();
-    for(const t of trains.slice(0,150)){
-      if(!t.location?.coordinates) continue;
-      const[lng,lat]=t.location.coordinates, key=String(t.trainNumber); active.add(key);
-      const isSel=S.train.replace(/\D/g,'')=== key, color=isSel?'#00a651':'#3366cc', size=isSel?14:8;
-      const icon=L.divIcon({html:`<div style="width:${size}px;height:${size}px;background:${color};border:2px solid ${isSel?'#fff':'rgba(255,255,255,.4)'};border-radius:50%;${isSel?'box-shadow:0 0 8px rgba(0,166,81,.8)':''}"></div>`,className:'',iconSize:[size,size],iconAnchor:[size/2,size/2]});
-      if(S.markers[key]) S.markers[key].setLatLng([lat,lng]).setIcon(icon);
-      else S.markers[key]=L.marker([lat,lng],{icon}).bindPopup(`<b style="font-family:monospace">${t.trainNumber}</b><br>${Math.round(t.speed||0)} km/h`).addTo(S.mapInst);
-      if(isSel) S.mapInst.setView([lat,lng],8,{animate:true});
+
+async function fetchLocs() {
+  if (!S.mapInst) return;
+  try {
+    const res    = await fetch('https://rata.digitraffic.fi/api/v1/train-locations/latest');
+    const trains = await res.json();
+    if (!Array.isArray(trains)) return;
+    const active = new Set();
+    for (const t of trains.slice(0, 150)) {
+      if (!t.location?.coordinates) continue;
+      const [lng, lat] = t.location.coordinates;
+      const key   = String(t.trainNumber);
+      active.add(key);
+      const isSel = S.train.replace(/\D/g, '') === key;
+      const color = isSel ? '#00a651' : '#3366cc';
+      const size  = isSel ? 14 : 8;
+      const icon  = L.divIcon({
+        html:`<div style="width:${size}px;height:${size}px;background:${color};border:2px solid ${isSel?'#fff':'rgba(255,255,255,.4)'};border-radius:50%;${isSel?'box-shadow:0 0 8px rgba(0,166,81,.8)':''}"></div>`,
+        className:'', iconSize:[size,size], iconAnchor:[size/2,size/2]
+      });
+      const pop = `<b style="font-family:monospace">${t.trainNumber}</b><br>${Math.round(t.speed||0)} km/h`;
+      if (S.markers[key]) S.markers[key].setLatLng([lat, lng]).setIcon(icon);
+      else S.markers[key] = L.marker([lat,lng],{icon}).bindPopup(pop).addTo(S.mapInst);
+      if (isSel) S.mapInst.setView([lat,lng], 8, {animate:true});
     }
-    for(const k of Object.keys(S.markers)){if(!active.has(k)){S.mapInst.removeLayer(S.markers[k]);delete S.markers[k];}}
-  }catch(e){}
+    for (const k of Object.keys(S.markers)) {
+      if (!active.has(k)) { S.mapInst.removeLayer(S.markers[k]); delete S.markers[k]; }
+    }
+  } catch(e) {}
 }
-async function fetchTrafficCards(){
-  const el=document.getElementById('tcards');
-  try{
-    const trains=await(await fetch('https://rata.digitraffic.fi/api/v1/train-locations/latest')).json();
-    el.innerHTML=`<div class="tcard ok"><div class="tcard-t">🚆 ${Array.isArray(trains)?trains.length:0} JUNAA LIIKKEESSÄ</div><div class="tcard-d">Reaaliaikaiset sijaintitiedot · Fintraffic</div></div>
-    <div class="tcard warn"><div class="tcard-t">ℹ️ KARTTA PÄIVITTYY 15 SEK. VÄLEIN</div><div class="tcard-d">Lähde: rata.digitraffic.fi</div></div>`;
-  }catch(e){el.innerHTML=`<div class="tcard err"><div class="tcard-t">⚠️ LIIKENNETIETOJA EI SAATAVILLA</div></div>`;}
+
+async function fetchTrafficCards() {
+  const el = document.getElementById('tcards');
+  try {
+    const res    = await fetch('https://rata.digitraffic.fi/api/v1/train-locations/latest');
+    const trains = await res.json();
+    el.innerHTML = `
+      <div class="tcard ok"><div class="tcard-t">🚆 ${Array.isArray(trains)?trains.length:0} JUNAA LIIKKEESSÄ</div><div class="tcard-d">Reaaliaikaiset sijaintitiedot · Fintraffic</div></div>
+      <div class="tcard warn"><div class="tcard-t">ℹ️ KARTTA PÄIVITTYY 15 SEK. VÄLEIN</div><div class="tcard-d">Lähde: rata.digitraffic.fi</div></div>`;
+  } catch(e) {
+    el.innerHTML = `<div class="tcard err"><div class="tcard-t">⚠️ LIIKENNETIETOJA EI SAATAVILLA</div><div class="tcard-d">Tarkista internetyhteys</div></div>`;
+  }
 }
 
 // ── ASETUKSET ──
-function renderSettings(){
-  const el=document.getElementById('settings-content');
-  const vib=S.g('vibrate')!=='false', snd=S.g('sound')!=='false';
-  const dur=S.g('popup_duration')||'7', qa=S.g('quick_action')||'aikataulu';
-  const qaOpts=Object.entries(QOPTS).map(([k,v])=>`<option value="${k}"${k===qa?' selected':''}>${v.lbl}</option>`).join('');
-  el.innerHTML=`
+function renderSettings() {
+  const el  = document.getElementById('settings-content');
+  const vib = S.g('vibrate') !== 'false';
+  const snd = S.g('sound') !== 'false';
+  const dur = S.g('popup_duration') || '7';
+  const qa  = S.g('quick_action') || 'aikataulu';
+  const qaOpts = Object.entries(QOPTS).map(([k,v]) =>
+    `<option value="${k}"${k===qa?' selected':''}>${v.lbl}</option>`).join('');
+
+  el.innerHTML = `
     <div class="sset-sec"><div class="sset-sec-ttl">JUNA</div><div class="sset-card">
-      <div class="sset-row"><div><div class="sset-rt">Aktiivinen juna</div><div class="sset-rs">Lipunlukijan vertailujuna</div></div>
-        <input class="finp" id="st-train" value="${S.train}" style="width:80px;text-align:center;font-family:monospace;font-weight:900;text-transform:uppercase"></div></div></div>
+      <div class="sset-row">
+        <div><div class="sset-rt">Aktiivinen juna</div><div class="sset-rs">Lipunlukijan vertailujuna</div></div>
+        <input class="finp" id="st-train" value="${S.train}" style="width:80px;text-align:center;font-family:monospace;font-weight:900;text-transform:uppercase">
+      </div>
+    </div></div>
     <div class="sset-sec"><div class="sset-sec-ttl">ILMOITUKSET</div><div class="sset-card">
       <div class="sset-row"><div><div class="sset-rt">Värinä</div></div><label class="tog"><input type="checkbox" id="st-vib"${vib?' checked':''}><div class="tog-track"></div></label></div>
       <div class="sset-row"><div><div class="sset-rt">Ääni</div></div><label class="tog"><input type="checkbox" id="st-snd"${snd?' checked':''}><div class="tog-track"></div></label></div>
-      <div class="sset-row"><div><div class="sset-rt">Push-ilmoitukset</div><div class="sset-rs">Ilmoitus skannauksesta</div></div><label class="tog"><input type="checkbox" id="st-ntf"${S.g('notifications')!=='false'?' checked':''}><div class="tog-track"></div></label></div></div></div>
+      <div class="sset-row"><div><div class="sset-rt">Push-ilmoitukset</div><div class="sset-rs">Ilmoitus skannauksesta</div></div><label class="tog"><input type="checkbox" id="st-ntf"${S.g('notifications')!=='false'?' checked':''}><div class="tog-track"></div></label></div>
+    </div></div>
     <div class="sset-sec"><div class="sset-sec-ttl">POPUP</div><div class="sset-card">
-      <div class="sset-row"><div><div class="sset-rt">Popup-aika</div><div class="sset-rs">sekuntia</div></div>
-        <div style="display:flex;align-items:center;gap:6px"><input type="range" class="rinp" id="st-dur" min="3" max="60" value="${dur}"><span class="rval" id="st-dur-v">${dur}s</span></div></div></div></div>
+      <div class="sset-row">
+        <div><div class="sset-rt">Popup-aika</div><div class="sset-rs">sekuntia</div></div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <input type="range" class="rinp" id="st-dur" min="3" max="60" value="${dur}">
+          <span class="rval" id="st-dur-v">${dur}s</span>
+        </div>
+      </div>
+    </div></div>
     <div class="sset-sec"><div class="sset-sec-ttl">PIKA-TOIMINTO</div><div class="sset-card">
-      <div class="sset-row"><div><div class="sset-rt">Alareunan nappi</div></div><select class="fsel" id="st-qa" style="width:140px">${qaOpts}</select></div></div></div>
+      <div class="sset-row">
+        <div><div class="sset-rt">Alareunan nappi</div></div>
+        <select class="fsel" id="st-qa" style="width:140px">${qaOpts}</select>
+      </div>
+    </div></div>
     <div class="sset-sec"><div class="sset-sec-ttl">TIETOJA</div><div class="sset-card">
-      <div class="sset-row"><div><div class="sset-rt">VR Konduktööri</div><div class="sset-rs">Versio 3.0 · PWA</div></div></div>
+      <div class="sset-row"><div><div class="sset-rt">VR Konduktööri</div><div class="sset-rs">Versio 2.0 · PWA</div></div></div>
       <div class="sset-row" style="cursor:pointer" onclick="if(confirm('Nollataan kaikki?')){localStorage.clear();location.reload()}">
-        <div><div class="sset-rt" style="color:#e8002d">Nollaa kaikki tiedot</div></div><span style="font-weight:900">›</span></div></div></div>`;
-  document.getElementById('st-vib').onchange=e=>S.s('vibrate',e.target.checked);
-  document.getElementById('st-snd').onchange=e=>S.s('sound',e.target.checked);
-  document.getElementById('st-ntf').onchange=async e=>{
-    S.s('notifications',e.target.checked);
-    if(e.target.checked&&'Notification'in window&&Notification.permission!=='granted'){
-      const p=await Notification.requestPermission();
-      if(p!=='granted'){e.target.checked=false;S.s('notifications','false');toast('Ilmoituslupa evätty','err');}
+        <div><div class="sset-rt" style="color:#e8002d">Nollaa kaikki tiedot</div></div><span style="font-weight:900">›</span>
+      </div>
+    </div></div>`;
+
+  document.getElementById('st-vib').onchange = e => S.s('vibrate', e.target.checked);
+  document.getElementById('st-snd').onchange = e => S.s('sound', e.target.checked);
+  document.getElementById('st-ntf').onchange = async e => {
+    S.s('notifications', e.target.checked);
+    if (e.target.checked && 'Notification' in window && Notification.permission !== 'granted') {
+      const p = await Notification.requestPermission();
+      if (p !== 'granted') { e.target.checked = false; S.s('notifications', 'false'); toast('Ilmoituslupa evätty', 'err'); }
     }
   };
-  document.getElementById('st-dur').oninput=e=>{document.getElementById('st-dur-v').textContent=e.target.value+'s';S.s('popup_duration',e.target.value);};
-  document.getElementById('st-qa').onchange=e=>{S.s('quick_action',e.target.value);updateQuick();toast('Pika-toiminto päivitetty','ok');};
-  document.getElementById('st-train').onchange=e=>{const v=e.target.value.trim().toUpperCase();if(v){S.train=v;updateTop();toast('Juna: '+v,'ok');}};
+  document.getElementById('st-dur').oninput  = e => {
+    document.getElementById('st-dur-v').textContent = e.target.value + 's';
+    S.s('popup_duration', e.target.value);
+  };
+  document.getElementById('st-qa').onchange  = e => {
+    S.s('quick_action', e.target.value); updateQuick(); toast('Pika-toiminto päivitetty', 'ok');
+  };
+  document.getElementById('st-train').onchange = e => {
+    const v = e.target.value.trim().toUpperCase();
+    if (v) { S.train = v; updateTop(); toast('Juna: ' + v, 'ok'); }
+  };
 }
 
-if('serviceWorker'in navigator&&location.protocol!=='file:')
-  navigator.serviceWorker.register('sw.js').catch(()=>{});
+// ── SERVICE WORKER ──
+if ('serviceWorker' in navigator && location.protocol !== 'file:')
+  navigator.serviceWorker.register('sw.js').catch(() => {});
 
-updateTop(); updateQuick();
-setTimeout(()=>{
-  if('Notification'in window&&Notification.permission==='default'&&S.g('notifications')!=='false')
+// ── KÄYNNISTYS ──
+updateTop();
+updateQuick();
+
+setTimeout(() => {
+  if ('Notification' in window && Notification.permission === 'default' && S.g('notifications') !== 'false') {
     Notification.requestPermission();
-},2500);
+  }
+}, 2500);
 </script>
 </body>
 </html>
