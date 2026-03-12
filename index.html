@@ -705,16 +705,28 @@ function vibe(p) { if (S.g('vibrate') !== 'false' && 'vibrate' in navigator) nav
 
 // ══════════════════════════════════════════════════════════════
 //  VR AZTEC BINARY TICKET DECODER
-//  Tunnistaa otsakkeen 0xF8 0x02 0x61 ja purkaa binäärikentät.
+//  Ottaa ZXing Result-objektin. Käyttää getRawBytes() oikeiden
+//  binääritavujen saamiseksi — välttää UTF-16-vioittumat.
 //  Palauttaa ticket-objektin tai null jos header ei täsmää.
 // ══════════════════════════════════════════════════════════════
-function tryDecodeVRAztec(raw) {
-  // Tarvitaan vähintään 35 tavua
-  if (!raw || raw.length < 35) return null;
+function tryDecodeVRAztec(result) {
+  if (!result) return null;
 
-  // Muunna string tavutaulukoksi (ZXing palauttaa latin-1)
-  const b = [];
-  for (let i = 0; i < raw.length; i++) b.push(raw.charCodeAt(i) & 0xff);
+  // Hanki tavutaulukko getRawBytes():sta — ainoa luotettava tapa
+  let b = null;
+  try {
+    const raw = result.getRawBytes ? result.getRawBytes() : null;
+    if (raw && raw.length >= 35) {
+      b = Array.from(raw, x => x & 0xff);
+    }
+  } catch(e) {}
+
+  // Fallback merkkijonoon jos rawBytes ei saatavilla
+  if (!b) {
+    const txt = (typeof result === 'string') ? result : (result.text || '');
+    if (!txt || txt.length < 35) return null;
+    b = Array.from(txt, c => c.charCodeAt(0) & 0xff);
+  }
 
   // Tarkista VR Aztec -otsake: 0xF8 0x02 0x61
   if (b[0] !== 0xF8 || b[1] !== 0x02 || b[2] !== 0x61) return null;
@@ -801,7 +813,8 @@ function startScan() {
               if (S.scanning) status.textContent = 'AKTIIVINEN – odottaa koodia';
             }, 2000);
 
-            handleScan(result.text);
+            // Välitetään koko result-objekti, jotta getRawBytes() on käytettävissä
+            handleScan(result);
           }
         }
       );
@@ -833,12 +846,14 @@ function stopScan() {
 //  1) VR Aztec binääripolku (uusi)
 //  2) JSON QR/Aztec -polku (alkuperäinen, ei muutettu)
 // ══════════════════════════════════════════════════════════════
-async function handleScan(raw) {
+async function handleScan(result) {
+  // result on ZXing Result-objekti — käytetään .text JSON-polkua varten
+  const raw = (typeof result === 'string') ? result : (result.text || '');
 
   // ── 1. VR AZTEC BINARY CHECK ──
   // Tarkistetaan ennen JSON-parsintaa. Jos header täsmää, käsitellään
   // binäärinen VR-lippu ja poistutaan — JSON-polkua ei ajeta lainkaan.
-  const aztec = tryDecodeVRAztec(raw);
+  const aztec = tryDecodeVRAztec(result);
   if (aztec) {
     const match = aztec.train === S.train;
 
@@ -1322,7 +1337,7 @@ function renderSettings() {
       </div>
     </div></div>
     <div class="sset-sec"><div class="sset-sec-ttl">TIETOJA</div><div class="sset-card">
-      <div class="sset-row"><div><div class="sset-rt">VR Konduktööri</div><div class="sset-rs">Versio 2.1 · PWA</div></div></div>
+      <div class="sset-row"><div><div class="sset-rt">VR Konduktööri</div><div class="sset-rs">Versio 2.0 · PWA</div></div></div>
       <div class="sset-row" style="cursor:pointer" onclick="if(confirm('Nollataan kaikki?')){localStorage.clear();location.reload()}">
         <div><div class="sset-rt" style="color:#e8002d">Nollaa kaikki tiedot</div></div><span style="font-weight:900">›</span>
       </div>
