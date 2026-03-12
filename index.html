@@ -1038,11 +1038,11 @@ function showPopup(ticket, status, match, alreadyUsed, fsError) {
   // ── Muistiokenttä: Aztec-kentät tai tavallinen muistio ──
   if (ticket.routeID !== undefined) {
     // VR Aztec -lippu: näytetään puretut binäärikentät
-    note.textContent =
-      'Vaunu: '      + ticket.coach     + '  ' +
-      'Paikka: '     + ticket.seat      + '  ' +
-      'routeID: '    + ticket.routeID   + '  ' +
-      'serviceID: '  + ticket.serviceID;
+    note.innerHTML =
+      'Vaunu: '     + ticket.coach     + '<br>' +
+      'Paikka: '    + ticket.seat      + '<br>' +
+      'routeID: '   + ticket.routeID   + '<br>' +
+      'serviceID: ' + ticket.serviceID;
     note.classList.add('on');
   } else if (ticket.note) {
     // Tavallinen JSON-lippu muistiolla
