@@ -737,18 +737,20 @@ function tryDecodeVRAztec(result) {
   const b33 = b[33];
   const b34 = b[34];
 
-  // Vaunu (3 bittiä)
-  const coach = (b33 >> 5) & 7;
+  let val = (b[33] << 2) | (b[34] >> 6)
 
-  // Paikka (7 bittiä hajautettu eri tavuihin)
-  const seat =
-    ((b33 >> 4) & 1) << 6 |
-    (1 - ((b31 >> 6) & 1)) << 5 |
-    ((b33 >> 2) & 1) << 4 |
-    ((b33 >> 1) & 1) << 3 |
-    (b33 & 1)        << 2 |
-    ((b34 >> 7) & 1) << 1 |
-    ((b34 >> 6) & 1);
+let coach = val >> 7
+let seat = val & 0x7F
+
+// yläkerta
+if((b[32] & 0x80) !== 0){
+  seat += 100
+}
+
+// 🔥 offset korjaus (tämä oli sun case!)
+if(seat > 32){
+  seat -= 32
+}
 
   // Reitti- ja palvelutunnus
   const routeID   = (b[20] << 8) | b[21];
