@@ -748,7 +748,11 @@ if((b[32] & 0x80) !== 0){
 }
 
 // 🔥 offset korjaus (tämä oli sun case!)
-if(seat > 32){
+// yläkerta
+let isUpstairs = (b[32] & 0x80) !== 0
+
+// offset vain alakerran isoille paikoille
+if(!isUpstairs && seat >= 64){
   seat -= 32
 }
 
@@ -1341,7 +1345,7 @@ function renderSettings() {
       </div>
     </div></div>
     <div class="sset-sec"><div class="sset-sec-ttl">TIETOJA</div><div class="sset-card">
-      <div class="sset-row"><div><div class="sset-rt">VR Konduktööri</div><div class="sset-rs">Versio 2.1 · PWA</div></div></div>
+      <div class="sset-row"><div><div class="sset-rt">VR Konduktööri</div><div class="sset-rs">Versio 2.2 · PWA</div></div></div>
       <div class="sset-row" style="cursor:pointer" onclick="if(confirm('Nollataan kaikki?')){localStorage.clear();location.reload()}">
         <div><div class="sset-rt" style="color:#e8002d">Nollaa kaikki tiedot</div></div><span style="font-weight:900">›</span>
       </div>
