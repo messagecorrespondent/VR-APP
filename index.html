@@ -747,14 +747,7 @@ if((b[32] & 0x80) !== 0){
   seat += 100
 }
 
-// 🔥 offset korjaus (tämä oli sun case!)
-// yläkerta
-let isUpstairs = (b[32] & 0x80) !== 0
 
-// offset vain alakerran isoille paikoille
-if(!isUpstairs && seat >= 64){
-  seat -= 32
-}
 
   // Reitti- ja palvelutunnus
   const routeID   = (b[20] << 8) | b[21];
